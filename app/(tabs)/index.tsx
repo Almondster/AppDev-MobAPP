@@ -5,8 +5,13 @@ import { Image, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, Vi
 import { useTheme } from '../../context/ThemeContext';
 
 export default function HomeScreen() {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, mode, setMode } = useTheme();
   const router = useRouter();
+
+  const toggleDarkMode = () => {
+    const newMode = isDark ? 'light' : 'dark';
+    setMode(newMode as 'light' | 'dark' | 'system');
+  };
 
   const renderCategory = (icon: any, label: string) => (
     <View style={styles.categoryItem}>
@@ -38,9 +43,18 @@ export default function HomeScreen() {
           <Text style={[styles.greeting, { color: theme.textSecondary }]}>Hello,</Text>
           <Text style={[styles.userName, { color: theme.text }]}>Mock User 👋</Text>
         </View>
-        <Pressable style={styles.avatarButton}>
-          <Image source={{ uri: 'https://via.placeholder.com/150' }} style={styles.avatarImage} />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable onPress={toggleDarkMode} style={styles.themeToggleButton}>
+            <Ionicons
+              name={isDark ? 'sunny-outline' : 'moon-outline'}
+              size={20}
+              color={theme.text}
+            />
+          </Pressable>
+          <Pressable style={styles.avatarButton}>
+            <Image source={{ uri: 'https://via.placeholder.com/150' }} style={styles.avatarImage} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -100,6 +114,8 @@ const styles = StyleSheet.create({
   userName: { fontSize: 22, fontWeight: 'bold' },
   avatarButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#e2e8f0', overflow: 'hidden' },
   avatarImage: { width: '100%', height: '100%' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  themeToggleButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   scrollContent: {},
   section: { padding: 20 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

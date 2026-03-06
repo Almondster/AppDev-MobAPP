@@ -19,8 +19,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
   const _router = useRouter();
-  const { theme, isDark: _isDark } = useTheme();
+  const { theme, isDark: _isDark, mode, setMode } = useTheme();
   const _insets = useSafeAreaInsets();
+
+  const toggleDarkMode = () => {
+    const newMode = _isDark ? 'light' : 'dark';
+    setMode(newMode as 'light' | 'dark' | 'system');
+  };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -190,6 +195,15 @@ export default function LoginScreen() {
 
   return (
     <View style={[styles.safe, themeStyles.container]}>
+      <View style={[styles.themeToggleContainer, { paddingTop: _insets.top }]}>
+        <Pressable onPress={toggleDarkMode} style={styles.themeToggleButton}>
+          <Ionicons
+            name={_isDark ? 'sunny-outline' : 'moon-outline'}
+            size={20}
+            color={theme.text}
+          />
+        </Pressable>
+      </View>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -396,6 +410,18 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+  },
+  themeToggleContainer: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  themeToggleButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContent: {
     flexGrow: 1,
