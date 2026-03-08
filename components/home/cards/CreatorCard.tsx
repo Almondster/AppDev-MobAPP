@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-
+import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../context/ThemeContext';
+import { Shadows } from '../../../constants/theme';
 
 interface CreatorCardProps {
   creator: {
@@ -16,7 +17,7 @@ interface CreatorCardProps {
 
 export const CreatorCard: React.FC<CreatorCardProps> = ({ creator, onPress }) => {
   const { theme } = useTheme();
-
+  const { t } = useLanguage();
 
   return (
     <Pressable
@@ -33,13 +34,13 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator, onPress }) =>
     >
       <View style={[styles.creatorTopPlaceholder, { backgroundColor: theme.cardBorder }]}>
         {creator.avatar_url ? (
-          <Image source={{ uri: creator.avatar_url }} style={{ width: '100%', height: '100%' }} />
+          <Image source={{uri: creator.avatar_url}} style={{width: '100%', height: '100%'}} />
         ) : (
           <Text style={[styles.placeholderText, { color: theme.textSecondary }]}>
             {creator.full_name?.charAt(0)}
           </Text>
         )}
-
+        
         <View style={styles.ratingOverlay}>
           <Ionicons name="star" size={10} color="#fbbf24" />
           <Text style={styles.ratingOverlayText}>{creator.calculated_rating}</Text>
@@ -51,7 +52,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator, onPress }) =>
           {creator.full_name}
         </Text>
         <Text style={[styles.creatorRole, { color: theme.textSecondary }]}>
-          Creator
+          {t('creatorRole')}
         </Text>
       </View>
     </Pressable>
@@ -59,21 +60,17 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator, onPress }) =>
 };
 
 const styles = StyleSheet.create({
-  creatorCard: {
-    width: 180,
-    height: 170,
-    marginRight: 16,
-    borderRadius: 16,
+  creatorCard: { 
+    width: 180, 
+    height: 170, 
+    marginRight: 16, 
+    borderRadius: 16, 
     overflow: 'hidden',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.md,
   },
-  creatorTopPlaceholder: {
-    height: 110,
-    justifyContent: 'center',
+  creatorTopPlaceholder: { 
+    height: 110, 
+    justifyContent: 'center', 
     alignItems: 'center',
     position: 'relative',
   },
@@ -94,22 +91,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 3,
   },
-  creatorInfo: {
+  creatorInfo: { 
     padding: 12,
   },
-  creatorName: {
-    fontSize: 14,
+  creatorName: { 
+    fontSize: 14, 
     fontWeight: '600',
     marginBottom: 4,
   },
-  creatorRole: {
+  creatorRole: { 
     fontSize: 12,
   },
   placeholderText: {
     marginTop: 8,
     fontSize: 16,
   },
-  cardPressed: {
-    opacity: 0.8
+  cardPressed: { 
+    opacity: 0.8 
   },
 });

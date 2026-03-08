@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { Shadows } from '../../../constants/theme';
 
 // Main categories with their icons
 const MAIN_CATEGORIES = [
@@ -126,11 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, 
     marginRight: 16, 
     overflow: 'hidden',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.md,
   },
   serviceImageContainer: {
     height: 130,

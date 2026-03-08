@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { Shadows } from '../../../constants/theme';
 
 interface BookingModalProps {
   visible: boolean;
@@ -110,11 +111,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    ...Shadows.xl,
     marginHorizontal: 20,
   },
   bookingIconCircle: {
@@ -143,11 +140,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    ...Shadows.lg,
   },
   bookingModalButtonText: {
     color: '#fff',

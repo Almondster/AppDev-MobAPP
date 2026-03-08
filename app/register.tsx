@@ -1,24 +1,34 @@
 import { useTheme } from '@/context/ThemeContext';
+import { Shadows } from '@/constants/theme';
+import { supabase } from '@/frontend/store';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import {
+  auth,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+  updateProfile
+} from '@/frontend/session';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { styles } from '../styles/RegisterScreen.styles';
 
 type Country = {
   code: string;
@@ -80,7 +90,7 @@ const COUNTRIES: Country[] = [
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { theme, isDark: _isDark } = useTheme();
+  const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   const [firstName, setFirstName] = useState('');
@@ -340,27 +350,97 @@ export default function RegisterScreen() {
   }, []);
 
   const handleSignUp = async () => {
+    // Validate all fields
     if (!validateForm()) {
       setIncompleteModalMessage('Please check the form for errors.');
       setShowIncompleteModal(true);
       return;
     }
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+      // Clean phone number for storage
+      const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+      const fullPhoneNumber = `${selectedCountry.dialCode}${cleanPhone}`;
+
+      // Calculate Age
+      const age = birthDate ? calculateAge(birthDate) : '';
+
+      // 1. Create User in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
+      const user = userCredential.user;
+
+      // Construct full name from separate fields
+      const fullName = `${firstName.trim()} ${middleName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim();
+
+      // 2. Update Firebase Profile Name
+      await updateProfile(user, {
+        displayName: fullName,
+      });
+
+      // 3. Create User in Supabase
+      // Added missing fields: age, nationality, and corrected phone storage
+      const { error: supabaseError } = await supabase
+        .from('users')
+        .insert({
+          firebase_uid: user.uid,
+          email: email.trim(),
+          first_name: firstName.trim(),
+          middle_name: middleName.trim(),
+          last_name: lastName.trim(),
+          full_name: fullName,
+          phone: fullPhoneNumber, // Storing complete international number
+          birthdate: birthDate ? birthDate.toLocaleDateString('en-GB') : '',
+          age: age, // Populating age column
+          nationality: selectedCountry.name, // Populating nationality column
+          role: 'client',
+          created_at: new Date().toISOString(),
+        });
+
+      if (supabaseError) {
+        console.error('Supabase insert error:', supabaseError);
+        throw new Error(`Failed to create user profile: ${supabaseError.message}`);
+      }
+
+      // 4. Send Verification Email
+      await sendEmailVerification(user);
+
+      // 5. Sign Out Immediately (Prevent Auto-Login)
+      await signOut(auth);
+
       Alert.alert(
         'Verification Sent',
         `We've sent a verification link to ${email}. Please check your inbox or spam folder and verify your account before logging in.`,
         [
           {
             text: 'Ok',
-            onPress: () => router.replace('/login')
+            onPress: () => { }
           }
         ]
       );
-    }, 1500);
+
+    } catch (error: any) {
+      let errorMessage = 'Unable to create account. Please try again.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please sign in instead.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'The email address is not valid.';
+      } else if (error.message?.includes('Supabase')) {
+        errorMessage = error.message;
+      }
+      setRegistrationErrorMessage(errorMessage);
+      setShowRegistrationErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderCountryItem = ({ item }: { item: Country }) => (
@@ -467,9 +547,10 @@ export default function RegisterScreen() {
           keyboardDismissMode="on-drag"
         >
           <View style={[styles.hero, { paddingTop: insets.top + 20 }]}>
-            <Text style={[styles.logo, { color: theme.text }]}>
-              CREA<Text style={styles.logoAccent}>TECH</Text>
-            </Text>
+            <Image 
+              source={isDark ? require('../assets/images/splash-icon-light.png') : require('../assets/images/splash-icon-dark.png')} 
+              style={{ width: '100%', height: 140, resizeMode: 'contain', marginTop: 10, marginBottom: -10 }} 
+            />
             <Text style={[styles.heroTitle, { color: theme.text }]}>Register</Text>
             <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
               Already have an account?{' '}
@@ -873,4 +954,244 @@ export default function RegisterScreen() {
   );
 }
 
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  hero: {
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 65,
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 40,
+  },
+  logoAccent: {
+    color: '#2563EB',
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  inlineLink: {
+    color: '#387BFF',
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  card: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
+    flex: 1,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -20,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  fieldGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  input: {
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 56,
+    fontSize: 16,
+  },
+  inputError: {
+    borderColor: '#DC2626',
+  },
+  pickerInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  birthDateText: {
+    fontSize: 16,
+  },
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 56,
+  },
+  flagButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  flagEmoji: {
+    fontSize: 20,
+    marginRight: 4,
+  },
+  dialCode: {
+    fontSize: 16,
+    marginRight: 8,
+    fontWeight: '500',
+  },
+  phoneInput: {
+    flex: 1,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    height: '100%',
+    fontSize: 16,
+  },
+  passwordWrapper: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 44,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  primaryButton: {
+    borderRadius: 12,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#DC2626',
+    marginTop: 6,
+    fontSize: 12,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  countryFlag: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  countryName: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  countryDial: {
+    fontSize: 14,
+  },
+  dateModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  dateModalCard: {
+    borderRadius: 16,
+    width: '100%',
+    padding: 20,
+  },
+  datePickerClose: {
+    marginTop: 16,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  datePickerCloseText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalAlertCard: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    ...Shadows.xl,
+  },
+  modalIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalAlertTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalAlertMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalAlertButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalAlertButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 

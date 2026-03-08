@@ -1,4 +1,4 @@
-
+import { supabase } from '@/frontend/store';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -10,19 +10,22 @@ import {
   Pressable,
   ScrollView,
   StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   View
 } from 'react-native';
 
+import { useLanguage } from '@/context/LanguageContext';
 import { useTheme } from '@/context/ThemeContext';
-import { styles } from '../../styles/SearchScreen.styles';
+import { Shadows } from '@/constants/theme';
 
 const CARD_GAP = 12;
 const HORIZONTAL_PADDING = 24;
 
 export default function SearchScreen() {
   const { theme, isDark } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState('services');
@@ -45,12 +48,36 @@ export default function SearchScreen() {
 
   const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      // Mock Categories
-      setCategories([{ id: 1, label: 'UI/UX Design', icon: 'color-palette', color: theme.tint }]);
-      setCreators([{ id: 1, full_name: 'John Doe', avatar_url: '' }]);
+    try {
+      if (activeTab === 'services') {
+        // 1. Fetch Categories from Supabase
+        let query = supabase.from('categories').select('*').order('id', { ascending: true });
+
+        const { data: catsData } = await query;
+
+        if (catsData) {
+          if (searchQuery) {
+            const filtered = catsData.filter(c =>
+              c.label.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            setCategories(filtered);
+          } else {
+            setCategories(catsData);
+          }
+        }
+
+      } else {
+        // 2. Fetch Creators
+        let query = supabase.from('users').select('*').eq('role', 'creator');
+        if (searchQuery) query = query.ilike('full_name', `%${searchQuery}%`);
+        const { data } = await query;
+        if (data) setCreators(data);
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const themeStyles = {
@@ -68,12 +95,12 @@ export default function SearchScreen() {
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       <View style={[styles.headerContainer, themeStyles.header]}>
-        <Text style={[styles.headerTitle, themeStyles.text]}>Search</Text>
+        <Text style={[styles.headerTitle, themeStyles.text]}>{t('searchTitle')}</Text>
 
         <View style={[styles.searchBar, themeStyles.input]}>
           <Ionicons name="search" size={20} color={theme.textSecondary} />
           <TextInput
-            placeholder='Search for services or creators'
+            placeholder={t('searchPlaceholder')}
             placeholderTextColor={theme.textSecondary}
             style={[styles.searchInput, { color: theme.text }]}
             value={searchQuery}
@@ -93,7 +120,7 @@ export default function SearchScreen() {
             onPress={() => setActiveTab('services')}
           >
             <Text style={[styles.tabText, activeTab === 'services' ? { color: theme.tint } : { color: theme.textSecondary }]}>
-              Services
+              {t('tabServices')}
             </Text>
             {activeTab === 'services' && (
               <View style={[styles.activeIndicator, { backgroundColor: theme.tint }]} />
@@ -104,7 +131,7 @@ export default function SearchScreen() {
             onPress={() => setActiveTab('creators')}
           >
             <Text style={[styles.tabText, activeTab === 'creators' ? { color: theme.tint } : { color: theme.textSecondary }]}>
-              Creators
+              {t('tabCreators')}
             </Text>
             {activeTab === 'creators' && (
               <View style={[styles.activeIndicator, { backgroundColor: theme.tint }]} />
@@ -139,7 +166,7 @@ export default function SearchScreen() {
                         { width: cardWidth }
                       ]}
                       onPress={() => router.push({
-                        pathname: '/search/subcategory' as never,
+                        pathname: '/search/subcategory',
                         params: { mainCategory: cat.label }
                       })}
                     >
@@ -165,7 +192,7 @@ export default function SearchScreen() {
                       key={cat.id}
                       style={[styles.gridCard, themeStyles.card, { width: cardWidth }]}
                       onPress={() => router.push({
-                        pathname: '/search/subcategory' as never,
+                        pathname: '/search/subcategory',
                         params: { mainCategory: cat.label }
                       })}
                     >
@@ -197,7 +224,7 @@ export default function SearchScreen() {
                 <Pressable
                   key={creator.id}
                   style={[styles.gridCard, styles.centeredCard, themeStyles.card, { width: cardWidth }]}
-                  onPress={() => router.push(`/creator` as never)}
+                  onPress={() => router.push(`/creator/${creator.firebase_uid}`)}
                 >
                   <View style={[styles.avatarPlaceholder, themeStyles.placeholder]}>
                     {creator.avatar_url ? (
@@ -212,7 +239,7 @@ export default function SearchScreen() {
                     {creator.full_name}
                   </Text>
                   <Text style={[styles.cardSubtitle, { color: theme.tint }]} numberOfLines={1}>
-                    Creator
+                    {t('creatorRole')}
                   </Text>
                 </Pressable>
               ))
@@ -224,5 +251,97 @@ export default function SearchScreen() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  headerContainer: {
+    paddingTop: 60,
+    paddingBottom: 0,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    ...Shadows.xl,
+    zIndex: 10,
+  },
+  headerTitle: { fontSize: 28, fontWeight: '700', paddingHorizontal: 24, marginBottom: 16 },
+  searchBar: {
+    marginHorizontal: 24,
+    borderRadius: 12,
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    height: 50,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 16, height: '100%' },
+  tabsContainer: { flexDirection: 'row' },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    position: 'relative'
+  },
+  tabText: { fontSize: 16, fontWeight: '600' },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    height: 4,
+    width: 40,
+    borderRadius: 4,
+  },
+  scrollContent: { paddingHorizontal: 24, paddingVertical: 24, paddingBottom: 24 },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
 
+  // --- UPDATED CARD STYLES ---
+  gridCard: {
+    borderRadius: 16,
+    height: 180,
+    marginBottom: 12,
+    ...Shadows.md,
+    overflow: 'hidden'
+  },
+  // Used for Creators AND Dark Mode Services
+  centeredCard: {
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Used for Dark Mode Services (Legacy Style)
+  iconPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12
+  },
 
+  // --- NEW STYLES (Light Mode Services) ---
+  cardHeader: {
+    height: 100,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+
+  // Creator specific styles
+  avatarPlaceholder: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 12, overflow: 'hidden' },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarText: { fontSize: 24, fontWeight: '700' },
+
+  // Shared Text Styles
+  cardTitle: { fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
+  cardSubtitle: { fontSize: 12, textAlign: 'center' },
+});

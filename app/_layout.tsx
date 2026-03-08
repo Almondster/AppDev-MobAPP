@@ -1,71 +1,92 @@
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { RoleProvider } from '../context/RoleContext';
-import { ThemeProvider, useTheme } from '../context/ThemeContext';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary
-} from 'expo-router';
-
-export const unstable_settings = {
-  initialRouteName: 'login',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { LanguageProvider } from '@/context/LanguageContext';
+import { OrderProvider } from '@/context/OrderContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { UnreadProvider } from '@/context/UnreadContext';
+import { useUserSync } from '@/hooks/useUserSync';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { auth, onAuthStateChanged, User } from '@/frontend/session';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  useUserSync();
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const segments = useSegments();
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (initializing) setInitializing(false);
+    });
+    return unsubscribe;
+  }, [initializing]);
+
+  useEffect(() => {
+    if (initializing) return;
+
+    const inTabsGroup = segments[0] === '(tabs)';
+    const inAuthRoute = segments[0] === 'login' || segments[0] === 'register';
+
+    if (user) {
+      if (inAuthRoute) {
+        router.replace('/(tabs)');
+      }
+    } else {
+      if (inTabsGroup || segments[0] === 'chat') {
+        router.replace('/login');
+      }
     }
-  }, [loaded]);
+  }, [user, initializing, segments, router]);
 
-  if (!loaded) {
-    return null;
+  if (initializing) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
   }
 
   return (
-    <ThemeProvider>
-      <RoleProvider>
-        <RootLayoutNav />
-      </RoleProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <LanguageProvider>
+          <OrderProvider>
+            <UnreadProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="login" />
+                <Stack.Screen name="register" />
+                <Stack.Screen name="(tabs)" />
+
+                {/* Search - No Animation */}
+                <Stack.Screen
+                  name="search"
+                  options={{
+                    animation: 'none',
+                    headerShown: false
+                  }}
+                />
+                <Stack.Screen
+                  name="smart-match"
+                  options={{
+                    animation: 'none',
+                    headerShown: false
+                  }}
+                />
+                <Stack.Screen
+                  name="chat/[id]"
+                  options={{
+                    animation: 'none'
+                  }}
+                />
+              </Stack>
+            </UnreadProvider>
+          </OrderProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
-function RootLayoutNav() {
-  const { isDark } = useTheme();
-
-  return (
-    <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="creator" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding/become-creator" options={{ headerShown: false }} />
-        <Stack.Screen name="add-service" options={{ headerShown: false }} />
-        <Stack.Screen name="notifications" options={{ headerShown: false }} />
-        <Stack.Screen name="search" options={{ headerShown: false }} />
-        <Stack.Screen name="smart-match" options={{ headerShown: false }} />
-        <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
-      </Stack>
-    </NavigationThemeProvider>
-  );
-}

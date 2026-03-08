@@ -1,0 +1,105 @@
+.
+├── android
+│   ├── app
+│   │   ├── build.gradle
+│   │   ├── debug.keystore
+│   │   ├── proguard-rules.pro
+│   │   └── src
+│   ├── build.gradle
+│   ├── gradle
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   └── settings.gradle
+├── app
+│   ├── add-service.tsx
+│   ├── chat
+│   │   └── [id].tsx
+│   ├── creator
+│   │   └── [id].tsx
+│   ├── index.tsx
+│   ├── _layout.tsx
+│   ├── login.tsx
+│   ├── onboarding
+│   │   └── become-creator.tsx
+│   ├── register.tsx
+│   ├── search
+│   │   ├── creators.tsx
+│   │   ├── _layout.tsx
+│   │   ├── listings.tsx
+│   │   ├── recentmatch.tsx
+│   │   ├── services.tsx
+│   │   └── subcategory.tsx
+│   ├── smart-match
+│   │   ├── _layout.tsx
+│   │   ├── loading.tsx
+│   │   ├── match.tsx
+│   │   ├── step2.tsx
+│   │   ├── step3.tsx
+│   │   └── step4.tsx
+│   └── (tabs)
+│       ├── AnalyticsScreen.tsx
+│       ├── create_placeholder.tsx
+│       ├── index.tsx
+│       ├── _layout.tsx
+│       ├── ManageService.tsx
+│       ├── message.tsx
+│       ├── order.tsx
+│       ├── profile.tsx
+│       └── search.tsx
+├── app.config.js
+├── assets
+│   ├── createchicon.png
+│   ├── createchicontransparent.png
+│   ├── images
+│   │   ├── android-icon-background.png
+│   │   ├── android-icon-foreground.png
+│   │   ├── android-icon-monochrome.png
+│   │   ├── favicon.png
+│   │   ├── icon.png
+│   │   ├── partial-react-logo.png
+│   │   ├── react-logo@2x.png
+│   │   ├── react-logo@3x.png
+│   │   ├── react-logo.png
+│   │   └── splash-icon.png
+│   ├── Login.png
+│   └── Signup.png
+├── babel.config.js
+├── components
+│   ├── SmartMatchProgressHeader.tsx
+│   ├── themed-text.tsx
+│   ├── themed-view.tsx
+│   └── ui
+│       ├── icon-symbol.ios.tsx
+│       └── icon-symbol.tsx
+├── constants
+│   ├── storage.ts
+│   └── theme.ts
+├── context
+│   ├── LanguageContext.tsx
+│   ├── OrderContext.tsx
+│   ├── ThemeContext.tsx
+│   └── UnreadContext.tsx
+├── eas.json
+├── eslint.config.js
+├── expo-env.d.ts
+├── firebaseConfig.ts
+├── firebase.d.ts
+├── google-services.json
+├── hooks
+│   ├── use-color-scheme.ts
+│   ├── use-color-scheme.web.ts
+│   ├── use-theme-color.ts
+│   └── useUserSync.ts
+├── ios
+├── metro.config.js
+├── package.json
+├── package-lock.json
+├── project-structure.txt
+├── projectStructure.txt
+├── README.md
+├── scripts
+│   └── reset-project.js
+├── supabaseConfig.ts
+└── tsconfig.json
+├── node_modules

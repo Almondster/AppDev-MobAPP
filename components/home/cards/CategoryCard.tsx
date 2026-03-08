@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { Shadows } from '../../../constants/theme';
 
 interface CategoryCardProps {
   category: {
@@ -20,7 +21,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.categoryCard,
+        styles.categoryCard, 
         {
           backgroundColor: theme.card,
           borderColor: theme.cardBorder,
@@ -28,17 +29,17 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
         },
         pressed && styles.cardPressed
       ]}
-      onPress={() => router.push({
-        pathname: '/search/subcategory',
-        params: { mainCategory: category.label }
-      } as never)}
+      onPress={() => router.push({ 
+        pathname: '/search/subcategory', 
+        params: { mainCategory: category.label } 
+      })}
     >
       <View style={[
         styles.categoryHeader,
-        {
-          backgroundColor: isDark
-            ? '#1e293b'
-            : (category.color || '#3b82f6') + '20'
+        { 
+          backgroundColor: isDark 
+            ? '#1e293b' 
+            : (category.color || '#3b82f6') + '20' 
         }
       ]}>
         <View style={[styles.categoryIconCircle, { backgroundColor: theme.card }]}>
@@ -56,21 +57,17 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
 };
 
 const styles = StyleSheet.create({
-  categoryCard: {
-    width: 220,
-    height: 180,
-    borderRadius: 16,
-    marginRight: 16,
+  categoryCard: { 
+    width: 220, 
+    height: 180, 
+    borderRadius: 16, 
+    marginRight: 16, 
     overflow: 'hidden',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.lg,
   },
-  categoryHeader: {
-    height: 100,
-    justifyContent: 'center',
+  categoryHeader: { 
+    height: 100, 
+    justifyContent: 'center', 
     alignItems: 'center',
     position: 'relative'
   },
@@ -81,19 +78,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  categoryInfo: {
+  categoryInfo: { 
     padding: 12,
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-  categoryLabelText: {
-    fontSize: 15,
+  categoryLabelText: { 
+    fontSize: 15, 
     fontWeight: '700',
     lineHeight: 18,
     textAlign: 'center'
   },
-  cardPressed: {
-    opacity: 0.8
+  cardPressed: { 
+    opacity: 0.8 
   },
 });
