@@ -34,7 +34,7 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({
       onRequestClose={onClose}
     >
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        <Pressable style={[styles.modalContent, { backgroundColor: theme.background }]} onPress={() => { }}>
+        <Pressable style={[styles.modalContent, { backgroundColor: theme.background }]} onPress={() => {}}>
           <View style={styles.dragHandle} />
 
           {isBlocked ? (
@@ -46,7 +46,7 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({
               <Text style={[styles.blockedDesc, { color: theme.textSecondary }]}>
                 You have blocked this creator. You cannot view their details.
               </Text>
-              <Pressable
+              <Pressable 
                 style={[styles.unblockBtn, { borderColor: theme.cardBorder }]}
                 onPress={() => onViewProfile(creator.firebase_uid)}
               >
@@ -60,12 +60,12 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({
                   {creator.avatar_url ? (
                     <Image source={{ uri: creator.avatar_url }} style={{ width: '100%', height: '100%' }} />
                   ) : (
-                    <Text style={[styles.modalAvatarText, { color: theme.text }]}>{creator.full_name?.charAt(0)}</Text>
+                    <Text style={[styles.modalAvatarText, {color: theme.text}]}>{creator.full_name?.charAt(0)}</Text>
                   )}
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={{flex: 1}}>
                   <Text style={[styles.modalName, { color: theme.text }]}>{creator.full_name}</Text>
-                  <Text style={[styles.modalRole, { color: theme.tint }]}>{creator.role?.toUpperCase()}</Text>
+                  <Text style={[styles.modalRole, {color: theme.tint}]}>{creator.role?.toUpperCase()}</Text>
                   <View style={styles.modalRatingBadge}>
                     <Ionicons name="star" size={14} color="#fbbf24" />
                     <Text style={[styles.modalRatingText, { color: theme.text }]}>
@@ -73,7 +73,7 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({
                     </Text>
                   </View>
                 </View>
-                <Pressable onPress={onClose} style={[styles.closeBtn, { backgroundColor: theme.card }]}>
+                <Pressable onPress={onClose} style={[styles.closeBtn, {backgroundColor: theme.card}]}>
                   <Ionicons name="close" size={20} color={theme.text} />
                 </Pressable>
               </View>
@@ -99,7 +99,7 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({
               )}
 
               <View style={styles.actionRow}>
-                <Pressable
+                <Pressable 
                   style={[styles.actionBtn, styles.secondaryBtn, { borderColor: theme.cardBorder }]}
                   onPress={() => onViewProfile(creator.firebase_uid)}
                 >
@@ -107,22 +107,22 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({
                 </Pressable>
 
                 {!isCurrentUser ? (
-                  <Pressable
+                  <Pressable 
                     style={[styles.actionBtn, styles.primaryBtn, { backgroundColor: theme.tint }]}
                     onPress={() => {
                       onClose();
-                      router.push(`/chat/${creator.firebase_uid}` as never);
+                      router.push(`/chat/${creator.firebase_uid}`);
                     }}
                   >
                     <Ionicons name="chatbubble-ellipses-outline" size={20} color="#fff" />
                     <Text style={[styles.btnText, { color: '#fff', marginLeft: 8 }]}>Message</Text>
                   </Pressable>
                 ) : (
-                  <Pressable
+                  <Pressable 
                     style={[styles.actionBtn, styles.primaryBtn, { backgroundColor: '#9ca3af' }]}
                     onPress={() => {
                       onClose();
-                      router.push(`/profile` as never);
+                      router.push(`/profile`);
                     }}
                   >
                     <Text style={[styles.btnText, { color: '#fff', marginLeft: 8 }]}>Edit Profile</Text>
@@ -138,125 +138,125 @@ export const CreatorModal: React.FC<CreatorModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end'
+  modalBackdrop: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'flex-end' 
   },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
+  modalContent: { 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    padding: 24, 
+    paddingBottom: 40, 
     minHeight: 400,
     maxHeight: '80%'
   },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#ccc',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20
+  dragHandle: { 
+    width: 40, 
+    height: 4, 
+    backgroundColor: '#ccc', 
+    borderRadius: 2, 
+    alignSelf: 'center', 
+    marginBottom: 20 
   },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24
+  modalHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 24 
   },
-  modalAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
-    marginRight: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden'
+  modalAvatar: { 
+    width: 64, 
+    height: 64, 
+    borderRadius: 32, 
+    borderWidth: 2, 
+    marginRight: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    overflow: 'hidden' 
   },
-  modalAvatarText: {
-    fontSize: 24,
-    fontWeight: '700'
+  modalAvatarText: { 
+    fontSize: 24, 
+    fontWeight: '700' 
   },
-  modalName: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4
+  modalName: { 
+    fontSize: 20, 
+    fontWeight: '700', 
+    marginBottom: 4 
   },
-  modalRole: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1,
-    marginBottom: 6
+  modalRole: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    letterSpacing: 1, 
+    marginBottom: 6 
   },
-  modalRatingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+  modalRatingBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(251, 191, 36, 0.1)', 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 8, 
     alignSelf: 'flex-start',
     marginTop: 4
   },
-  modalRatingText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 6
+  modalRatingText: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    marginLeft: 6 
   },
-  closeBtn: {
-    padding: 8,
-    borderRadius: 20
+  closeBtn: { 
+    padding: 8, 
+    borderRadius: 20 
   },
-  infoSection: {
-    marginBottom: 20
+  infoSection: { 
+    marginBottom: 20 
   },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    textTransform: 'uppercase'
+  infoTitle: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginBottom: 8, 
+    textTransform: 'uppercase' 
   },
-  infoText: {
-    fontSize: 15,
-    lineHeight: 22
+  infoText: { 
+    fontSize: 15, 
+    lineHeight: 22 
   },
-  skillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8
+  skillsRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8 
   },
-  skillChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1
+  skillChip: { 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 16, 
+    borderWidth: 1 
   },
-  skillText: {
-    fontSize: 12,
-    fontWeight: '500'
+  skillText: { 
+    fontSize: 12, 
+    fontWeight: '500' 
   },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 10
+  actionRow: { 
+    flexDirection: 'row', 
+    gap: 12, 
+    marginTop: 10 
   },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row'
+  actionBtn: { 
+    flex: 1, 
+    paddingVertical: 16, 
+    borderRadius: 12, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    flexDirection: 'row' 
   },
   primaryBtn: {},
-  secondaryBtn: {
-    borderWidth: 1,
-    backgroundColor: 'transparent'
+  secondaryBtn: { 
+    borderWidth: 1, 
+    backgroundColor: 'transparent' 
   },
-  btnText: {
-    fontSize: 16,
-    fontWeight: '600'
+  btnText: { 
+    fontSize: 16, 
+    fontWeight: '600' 
   },
   blockedContainer: { alignItems: 'center', justifyContent: 'center', padding: 30, flex: 1 },
   blockedIcon: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },

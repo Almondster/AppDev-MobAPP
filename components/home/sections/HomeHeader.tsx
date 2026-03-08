@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-
+import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../context/ThemeContext';
+import { Shadows } from '../../../constants/theme';
 
 interface HomeHeaderProps {
   userName: string;
@@ -13,7 +14,7 @@ interface HomeHeaderProps {
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({ userName, userAvatar, totalNotifications }) => {
   const { theme } = useTheme();
-
+  const { t } = useLanguage();
   const router = useRouter();
 
   return (
@@ -23,10 +24,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ userName, userAvatar, to
           <Text style={[styles.logo, { color: theme.text }]}>
             CREA<Text style={styles.logoBlue}>TECH</Text>
           </Text>
-
+          
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Pressable
-              onPress={() => router.push('/notifications' as never)}
+            <Pressable 
+              onPress={() => router.push('/notifications')} 
               style={styles.iconButton}
             >
               <Ionicons name="notifications-outline" size={26} color={theme.text} />
@@ -39,13 +40,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ userName, userAvatar, to
               )}
             </Pressable>
 
-            <Pressable onPress={() => router.push('/profile' as never)} hitSlop={10} style={styles.profileButton}>
+            <Pressable onPress={() => router.push('/profile')} hitSlop={10} style={styles.profileButton}>
               {userAvatar ? (
                 <Image source={{ uri: userAvatar }} style={styles.headerAvatar} />
               ) : (
                 <View style={[styles.headerAvatarPlaceholder, { backgroundColor: theme.cardBorder }]}>
                   <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>
-                    {userName?.charAt(0)}
+                    {userName.charAt(0)}
                   </Text>
                 </View>
               )}
@@ -54,7 +55,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ userName, userAvatar, to
         </View>
 
         <Text style={[styles.greeting, { color: theme.textSecondary }]}>
-          Hello, {userName} — Welcome Back
+          {t('greeting')}, {userName} — {t('welcomeBack')}
         </Text>
       </View>
     </View>
@@ -66,16 +67,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingBottom: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.lg,
     zIndex: 10,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 60,
+  header: { 
+    paddingHorizontal: 24, 
+    paddingTop: 60, 
     paddingBottom: 24
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -102,7 +99,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: '#fff'
+    borderColor: '#fff' 
   },
   headerBadgeText: {
     color: '#fff',

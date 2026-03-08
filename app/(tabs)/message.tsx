@@ -16,6 +16,9 @@ import {
 } from 'react-native';
 import { MessageThread, MOCK_THREADS } from '../../constants/mockData';
 import { useTheme } from '../../context/ThemeContext';
+import { Shadows } from '../../constants/theme';
+import { supabase } from '../../frontend/store';
+import { auth } from '../../frontend/session';
 
 // --- SKELETON ---
 const SkeletonItem = ({ width, height, borderRadius = 4, style }: any) => {
@@ -38,6 +41,8 @@ export default function MessageScreen() {
   const [filteredThreads, setFilteredThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const user = auth.currentUser;
+  const [role, setRole] = useState<'client' | 'creator'>('client');
 
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterUnread, setFilterUnread] = useState(false);
@@ -46,12 +51,55 @@ export default function MessageScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    setTimeout(() => {
-      setThreads(MOCK_THREADS);
-      setFilteredThreads(MOCK_THREADS);
-      setLoading(false);
-    }, 600);
-  }, []);
+    let isMounted = true;
+    const fetchMessages = async () => {
+      if (!user) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      try {
+        const { data: userData } = await supabase.from('users').select('role').eq('firebase_uid', user.uid).single();
+        const currentRole = userData?.role || 'client';
+        if (isMounted) setRole(currentRole);
+
+        if (currentRole === 'creator') {
+          if (isMounted) {
+            setThreads([]);
+            setFilteredThreads([]);
+          }
+        } else {
+          const clientThreads: MessageThread[] = [
+            {
+              partnerId: 'mock-creator-1',
+              partnerName: 'Maya Santos',
+              partnerAvatar: null,
+              lastMessage: 'I drafted three logo directions for you.',
+              lastMessageTime: new Date(new Date().setHours(23, 43, 0)),
+              unreadCount: 1,
+            },
+            {
+              partnerId: 'mock-creator-2',
+              partnerName: 'Noah Lim',
+              partnerAvatar: null,
+              lastMessage: 'The landing page build is ready for review.',
+              lastMessageTime: new Date(new Date().setHours(5, 43, 0)),
+              unreadCount: 0,
+            }
+          ];
+          if (isMounted) {
+            setThreads(clientThreads);
+            setFilteredThreads(clientThreads);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchMessages();
+    return () => { isMounted = false; };
+  }, [user]);
 
   const applyFilters = (threadsList: MessageThread[], unreadFilter: boolean, sort: 'recent' | 'unread', search: string) => {
     let result = [...threadsList];
@@ -161,8 +209,8 @@ export default function MessageScreen() {
                 {thread.partnerAvatar ? (
                   <Image source={{ uri: thread.partnerAvatar }} style={styles.avatar} />
                 ) : (
-                  <View style={[styles.avatar, themeStyles.avatarPlaceholder]}>
-                    <Text style={[styles.avatarText, { color: '#fff' }]}>{thread.partnerName.charAt(0).toUpperCase()}</Text>
+                  <View style={[styles.avatar, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}>
+                    <Text style={[styles.avatarText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>{thread.partnerName.charAt(0).toUpperCase()}</Text>
                   </View>
                 )}
                 {thread.unreadCount > 0 && <View style={[styles.unreadIndicator, { backgroundColor: theme.tint }]} />}
@@ -174,11 +222,6 @@ export default function MessageScreen() {
                 </View>
                 <Text style={[styles.lastMessage, thread.unreadCount > 0 ? { color: theme.text, fontWeight: '600' } : themeStyles.textSecondary]} numberOfLines={2}>{thread.lastMessage}</Text>
               </View>
-              {thread.unreadCount > 0 && (
-                <View style={[styles.unreadBadge, { backgroundColor: theme.tint }]}>
-                  <Text style={styles.unreadText}>{thread.unreadCount > 99 ? '99+' : thread.unreadCount}</Text>
-                </View>
-              )}
             </Pressable>
           ))
         )}
@@ -235,7 +278,7 @@ export default function MessageScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 2, minHeight: 120, justifyContent: 'center' },
+  header: { paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, ...Shadows.lg, minHeight: 120, justifyContent: 'center' },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   title: { fontSize: 28, fontWeight: '700', marginBottom: 4 },
   subtitle: { fontSize: 16, fontWeight: '500' },
@@ -247,20 +290,18 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 100, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 20, fontWeight: '700', marginTop: 16, marginBottom: 8, textAlign: 'center' },
   emptySubtitle: { fontSize: 16, textAlign: 'center', lineHeight: 22 },
-  threadCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  threadCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 12, ...Shadows.lg },
   avatarContainer: { position: 'relative', marginRight: 16 },
   avatar: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 20, fontWeight: '700' },
   unreadIndicator: { position: 'absolute', top: 2, right: 2, width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: '#fff' },
-  threadBody: { flex: 1, marginRight: 12 },
+  threadBody: { flex: 1, marginRight: 0 },
   threadHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   partnerName: { fontSize: 17, fontWeight: '700', flex: 1, marginRight: 8 },
   timeText: { fontSize: 13, fontWeight: '500' },
   lastMessage: { fontSize: 15, lineHeight: 20 },
-  unreadBadge: { minWidth: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  unreadText: { color: '#fff', fontSize: 12, fontWeight: '800' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContainer: { width: '100%', borderRadius: 24, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 10 },
+  modalContainer: { width: '100%', borderRadius: 24, padding: 24, ...Shadows.xl },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   modalTitle: { fontSize: 22, fontWeight: '700' },
   filterSection: { marginBottom: 24 },
@@ -271,7 +312,7 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
   modalButton: { flex: 1, paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   resetButton: { borderWidth: 2, borderColor: '#e2e8f0' },
-  applyButton: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  applyButton: { ...Shadows.lg },
   resetButtonText: { fontSize: 16, fontWeight: '600' },
   applyButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

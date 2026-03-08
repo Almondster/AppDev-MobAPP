@@ -1,37 +1,72 @@
 import { Ionicons, Octicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useRole } from '@/context/RoleContext';
+import { useOrderUpdates } from '@/context/OrderContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useUnread } from '@/context/UnreadContext';
+import { auth } from '@/frontend/session';
+import { supabase } from '@/frontend/store';
+import { Shadows } from '@/constants/theme';
 
 export default function TabLayout() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { role, loading } = useRole();
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const unreadCount = 0;
-  const unseenOrderCount = 0;
+  const { unreadCount, refreshUnreadCount } = useUnread();
+  const { unseenOrderCount, markOrdersAsSeen } = useOrderUpdates();
 
   const insets = useSafeAreaInsets();
 
-  const isCreator = role === 'creator';
-
-  // When creator logs in, auto-navigate to AnalyticsScreen tab
   useEffect(() => {
-    if (!loading && isCreator) {
-      // Small delay to let tabs mount first
-      const timer = setTimeout(() => {
-        router.replace('/(tabs)/AnalyticsScreen' as never);
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, isCreator]);
+    const fetchRole = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const { data } = await supabase
+          .from('users')
+          .select('role')
+          .eq('firebase_uid', user.uid)
+          .single();
+        if (data) setRole(data.role);
+      }
+      setLoading(false);
+    };
+    fetchRole();
+  }, []);
+
+  // Set up real-time subscription for unread counts (Messages)
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const channel = supabase
+      .channel('unread-counts-global')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.uid}`,
+        },
+        () => {
+          refreshUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refreshUnreadCount]);
 
   // Center Button
   const CenterButton = () => {
+    const isCreator = role === 'creator';
     return (
       <View style={[styles.plusButton, { backgroundColor: theme.tint, borderColor: theme.background }]}>
         {isCreator ? (
@@ -41,6 +76,12 @@ export default function TabLayout() {
         )}
       </View>
     );
+  };
+
+  const handleOrderPress = () => {
+    markOrdersAsSeen();
+    // Navigate to order screen
+    router.push('/order');
   };
 
   // Show loading indicator while fetching role
@@ -65,31 +106,53 @@ export default function TabLayout() {
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom,
           paddingTop: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 8,
-          elevation: 10,
+          ...Shadows.md,
+          shadowOffset: { width: 0, height: -2 },
         },
       }}>
 
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "home" : "home-outline"} size={26} color={color} />,
-          href: isCreator ? null : undefined,
+          title: role === 'admin' ? 'Dashboard' : 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            role === 'admin'
+              ? <Ionicons name={focused ? "shield-checkmark" : "shield-checkmark-outline"} size={26} color={color} />
+              : <Ionicons name={focused ? "home" : "home-outline"} size={26} color={color} />
+          )
         }}
       />
 
-      {/* Creator-only: Analytics Dashboard as first tab */}
+      {/* Admin Specific Routes */}
       <Tabs.Screen
-        name="AnalyticsScreen"
+        name="admin_projects"
         options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color, focused }) =>
-            <Ionicons name={focused ? "analytics" : "analytics-outline"} size={26} color={color} />,
-          href: isCreator ? undefined : null,
+          title: 'All Projects',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "briefcase" : "briefcase-outline"} size={26} color={color} />,
+          href: role === 'admin' ? undefined : null
+        }}
+      />
+      <Tabs.Screen
+        name="admin_users"
+        options={{
+          title: 'Manage Users',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "people" : "people-outline"} size={26} color={color} />,
+          href: role === 'admin' ? undefined : null
+        }}
+      />
+      <Tabs.Screen
+        name="admin_disputes"
+        options={{
+          title: 'Disputes',
+          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "warning" : "warning-outline"} size={26} color={color} />,
+          href: role === 'admin' ? undefined : null
+        }}
+      />
+      <Tabs.Screen
+        name="admin_settings"
+        options={{
+          title: 'Settings',
+          href: null
         }}
       />
 
@@ -100,7 +163,7 @@ export default function TabLayout() {
           title: 'My Services',
           tabBarIcon: ({ color, focused }) =>
             <Ionicons name={focused ? "briefcase" : "briefcase-outline"} size={26} color={color} />,
-          href: isCreator ? undefined : null,
+          href: role === 'creator' ? undefined : null
         }}
       />
 
@@ -111,7 +174,7 @@ export default function TabLayout() {
           title: 'Search',
           tabBarIcon: ({ color, focused }) =>
             <Ionicons name={focused ? "search" : "search-outline"} size={26} color={color} />,
-          href: !isCreator ? undefined : null,
+          href: (role === 'creator' || role === 'admin') ? null : undefined
         }}
       />
 
@@ -119,32 +182,34 @@ export default function TabLayout() {
         name="create_placeholder"
         options={{
           title: '',
-          tabBarButton: (props) => {
-            const { ref: _ref, ...rest } = props;
-            return (
-              <Pressable
-                {...rest}
-                style={styles.plusContainer}
-                onPress={() => {
-                  if (isCreator) {
-                    router.push('/add-service' as never);
-                  } else {
-                    router.push('/smart-match/match' as never);
-                  }
-                }}
-              >
-                <CenterButton />
-              </Pressable>
-            );
-          }
+          ...(role === 'admin'
+            ? { href: null as any }
+            : {
+                tabBarButton: () => (
+                  <Pressable
+                    style={styles.plusContainer}
+                    onPress={() => {
+                      if (role === 'creator') {
+                        router.push('/add-service');
+                      } else {
+                        router.push('/smart-match/match');
+                      }
+                    }}
+                  >
+                    <CenterButton />
+                  </Pressable>
+                )
+              }
+          )
         }}
-        listeners={() => ({ tabPress: (e) => { e.preventDefault(); }, })}
+        listeners={() => ({ tabPress: (e) => { (e as any).preventDefault(); }, })}
       />
 
       <Tabs.Screen
         name="message"
         options={{
           title: 'Message',
+          href: role === 'admin' ? null : undefined,
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: theme.danger,
@@ -162,7 +227,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="order"
         options={{
-          title: isCreator ? 'My Gigs' : 'Orders',
+          title: role === 'creator' ? 'My Gigs' : 'Orders',
+          href: role === 'admin' ? null : undefined,
           tabBarBadge: unseenOrderCount > 0 ? unseenOrderCount : undefined,
           tabBarBadgeStyle: {
             backgroundColor: theme.danger,
@@ -174,10 +240,17 @@ export default function TabLayout() {
           },
           tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "clipboard" : "clipboard-outline"} size={26} color={color} />
         }}
+        listeners={() => ({
+          tabPress: (_e) => {
+            handleOrderPress();
+          },
+        })}
       />
 
       {/* Hidden Routes */}
       <Tabs.Screen name="profile" options={{ href: null }} />
+      <Tabs.Screen name="AnalyticsScreen" options={{ href: null }} />
+      <Tabs.Screen name="AdminDashboardScreen" options={{ href: null }} />
     </Tabs>
   );
 }
@@ -196,10 +269,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5
+    ...Shadows.xl,
   }
 });
+

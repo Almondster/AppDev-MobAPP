@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { Shadows } from '../../../constants/theme';
 
 interface MatchCardProps {
   match: {
@@ -31,7 +32,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         },
         pressed && styles.cardPressed
       ]}
-      onPress={() => router.push(`/creator`)}
+      onPress={() => router.push(`/creator/${match.id}`)}
     >
       <View style={[styles.matchImagePlaceholder, { backgroundColor: theme.cardBorder }]}>
         {match.avatar_url ? (
@@ -44,7 +45,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       <View style={styles.matchInfo}>
         <View style={styles.matchHeaderRow}>
           <View style={[styles.matchAvatarPlaceholder, { backgroundColor: theme.cardBorder }]}>
-            <Text style={[styles.avatarText, { color: theme.text }]}>{match?.full_name?.charAt(0)}</Text>
+            <Text style={[styles.avatarText, { color: theme.text }]}>{match.full_name.charAt(0)}</Text>
           </View>
 
           <View style={{ flex: 1 }}>
@@ -77,66 +78,62 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 };
 
 const styles = StyleSheet.create({
-  matchCard: {
-    width: 260,
-    height: 280,
-    marginRight: 16,
-    borderRadius: 16,
+  matchCard: { 
+    width: 260, 
+    height: 280, 
+    marginRight: 16, 
+    borderRadius: 16, 
     overflow: 'hidden',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.md,
   },
-  matchImagePlaceholder: {
-    height: 140,
-    justifyContent: 'center',
-    alignItems: 'center'
+  matchImagePlaceholder: { 
+    height: 140, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-  matchInfo: {
+  matchInfo: { 
     padding: 12,
     flex: 1,
     justifyContent: 'space-between'
   },
-  matchHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8
+  matchHeaderRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 8 
   },
-  matchAvatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center'
+  matchAvatarPlaceholder: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 18, 
+    marginRight: 10, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-  avatarText: {
-    fontWeight: '700'
+  avatarText: { 
+    fontWeight: '700' 
   },
-  matchName: {
-    fontSize: 14,
-    fontWeight: '600'
+  matchName: { 
+    fontSize: 14, 
+    fontWeight: '600' 
   },
-  matchTitle: {
-    fontSize: 12
+  matchTitle: { 
+    fontSize: 12 
   },
-  matchDesc: {
-    fontSize: 13,
+  matchDesc: { 
+    fontSize: 13, 
     lineHeight: 18,
     marginBottom: 12,
     flex: 1
   },
-  matchFooterRow: {
-    flexDirection: 'row',
+  matchFooterRow: { 
+    flexDirection: 'row', 
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 'auto'
   },
-  cardRatingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  cardRatingBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
     gap: 4,
   },
   ratingText: {
@@ -144,13 +141,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   matchSkills: {
-    fontSize: 12,
+    fontSize: 12, 
     fontWeight: '600',
     flex: 1,
     textAlign: 'right',
     marginLeft: 8
   },
-  cardPressed: {
-    opacity: 0.8
+  cardPressed: { 
+    opacity: 0.8 
   },
 });
