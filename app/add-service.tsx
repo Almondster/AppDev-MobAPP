@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     padding: 16, 
     fontSize: 16, 
     marginBottom: 24, 
-    ...Shadows.sm,
+    ...(Shadows.sm as any),
   },
   textArea: { height: 120, textAlignVertical: 'top' },
   

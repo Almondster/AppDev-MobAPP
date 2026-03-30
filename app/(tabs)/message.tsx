@@ -133,7 +133,8 @@ export default function MessageScreen() {
     text: { color: theme.text },
     textSecondary: { color: theme.textSecondary },
     card: { backgroundColor: theme.card, borderColor: theme.cardBorder, borderWidth: 1 },
-    input: { backgroundColor: theme.inputBackground, color: theme.text },
+    inputContainer: { backgroundColor: theme.inputBackground },
+    inputText: { color: theme.text },
     avatarPlaceholder: { backgroundColor: theme.tint },
     modalBg: { backgroundColor: theme.card },
   };
@@ -145,9 +146,9 @@ export default function MessageScreen() {
       {/* HEADER */}
       <View style={[styles.header, themeStyles.header]}>
         {isSearchVisible ? (
-          <View style={[styles.searchBarContainer, themeStyles.input]}>
+          <View style={[styles.searchBarContainer, themeStyles.inputContainer]}>
             <Ionicons name="search" size={20} color={theme.textSecondary} />
-            <TextInput style={[styles.searchInput, { color: theme.text }]} placeholder="Search..." placeholderTextColor={theme.textSecondary} value={searchQuery} onChangeText={setSearchQuery} autoFocus />
+            <TextInput style={[styles.searchInput, themeStyles.inputText]} placeholder="Search..." placeholderTextColor={theme.textSecondary} value={searchQuery} onChangeText={setSearchQuery} autoFocus />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} style={{ marginRight: 8 }}>
                 <Ionicons name="close-circle" size={18} color={theme.textSecondary} />
