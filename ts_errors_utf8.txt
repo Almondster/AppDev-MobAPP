@@ -1,0 +1,215 @@
+app/add-service.tsx(353,25): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/add-service.tsx(385,25): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/add-service.tsx(396,25): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/add-service.tsx(612,5): error TS2345: Argument of type '{ container: { flex: number; }; header: { flexDirection: "row"; alignItems: "center"; justifyContent: "space-between"; paddingHorizontal: number; paddingVertical: number; }; backButton: { padding: number; }; ... 36 more ...; alertButtonText: { ...; }; }' is not assignable to parameter of type '{ container: { flex: number; }; header: { flexDirection: "row"; alignItems: "center"; justifyContent: "space-between"; paddingHorizontal: number; paddingVertical: number; }; backButton: { padding: number; }; ... 36 more ...; alertButtonText: { ...; }; } & NamedStyles<...>'.
+  Property 'input' is incompatible with index signature.
+    Object literal may only specify known properties, and 'fontSize' does not exist in type 'ViewStyle'.
+app/onboarding/become-creator.tsx(539,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(555,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(571,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(587,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(667,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(676,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(687,21): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(697,21): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(710,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(719,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(795,26): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(798,26): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(801,26): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(804,26): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(807,26): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(1017,23): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle | Falsy | RegisteredStyle<TextStyle> | RecursiveArray<TextStyle | Falsy | RegisteredStyle<TextStyle>> | readonly (TextStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+      Type '{ backfaceVisibility?: "visible" | "hidden" | undefined; backgroundColor?: ColorValue | undefined; borderBlockColor?: ColorValue | undefined; ... 171 more ...; fontSize: number; }' is not assignable to type 'TextStyle'.
+        Types of property 'userSelect' are incompatible.
+          Type 'string' is not assignable to type '"text" | "none" | "auto" | "contain" | "all"'.
+app/onboarding/become-creator.tsx(1127,5): error TS2345: Argument of type '{ container: { flex: number; }; header: { flexDirection: "row"; alignItems: "center"; paddingHorizontal: number; paddingVertical: number; justifyContent: "space-between"; }; backButton: { padding: number; }; ... 60 more ...; phoneInput: { ...; }; }' is not assignable to parameter of type '{ container: { flex: number; }; header: { flexDirection: "row"; alignItems: "center"; paddingHorizontal: number; paddingVertical: number; justifyContent: "space-between"; }; backButton: { padding: number; }; ... 60 more ...; phoneInput: { ...; }; } & NamedStyles<...>'.
+  Property 'input' is incompatible with index signature.
+    Object literal may only specify known properties, and 'fontSize' does not exist in type 'ViewStyle'.

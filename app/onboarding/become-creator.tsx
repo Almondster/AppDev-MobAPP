@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: '#e5e7eb',
-    ...Shadows.md,
+    ...(Shadows.md as any),
   },
   stepLine: { width: 30, height: 3, backgroundColor: '#e5e7eb', marginHorizontal: 6, borderRadius: 2 },
   headerTextContainer: { paddingHorizontal: 24, marginBottom: 20 },
@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
     padding: 18,
     fontSize: 16,
     marginBottom: 24,
-    ...Shadows.md,
+    ...(Shadows.md as any),
   },
   textArea: { height: 120, textAlignVertical: 'top' },
   uploadBox: {
