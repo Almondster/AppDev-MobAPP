@@ -57,6 +57,9 @@ export default {
       ],
       "expo-secure-store",
       "expo-font",
+      "@react-native-community/datetimepicker",
+      "expo-image",
+      "expo-web-browser",
       [
         "expo-tracking-transparency",
         {
