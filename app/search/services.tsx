@@ -325,6 +325,7 @@ export default function AllServicesScreen() {
         .single();
 
       const { error } = await supabase.from('orders').insert({
+        service_id: selectedService.id,
         client_id: user.uid,
         creator_id: selectedService.creator_id,
         service_title: selectedService.title,

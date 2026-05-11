@@ -11,10 +11,18 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-const API_BASE = 'http://10.0.2.2:8000/api'; // Android emulator → host machine
-// For iOS simulator or physical device, use your machine's LAN IP:
-// const API_BASE = 'http://192.168.x.x:8000/api';
+const DEFAULT_API_BASE =
+  Platform.OS === 'android'
+    ? 'http://10.0.2.2:8000/api'
+    : 'http://localhost:8000/api';
+const configuredApiBase =
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  (Constants.expoConfig?.extra?.apiBaseUrl as string | undefined) ||
+  DEFAULT_API_BASE;
+const API_BASE = configuredApiBase.replace(/\/$/, '');
 
 const TOKEN_KEY = 'createch_token';
 const USER_KEY = 'createch_user';
@@ -164,6 +172,7 @@ async function request(endpoint: string, options: RequestOptions = {}): Promise<
         cachedToken = null;
         cachedUser = null;
         clearAllCache();
+        await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
         const err: any = new Error('Session expired');
         err.status = 401;
         throw err;
@@ -234,9 +243,11 @@ export async function loginAPI(email: string, password: string) {
   await setToken(data.access);
   await setStoredUser({
     firebase_uid: data.firebase_uid,
+    id: data.firebase_uid,
     email: data.email,
     role: data.role,
     full_name: data.full_name,
+    username: data.full_name,
   });
   clearAllCache();
   return data;
@@ -255,9 +266,11 @@ export async function registerAPI(payload: {
   await setToken(data.access);
   await setStoredUser({
     firebase_uid: data.firebase_uid,
+    id: data.firebase_uid,
     email: data.email,
     role: data.role,
     full_name: data.full_name,
+    username: data.full_name,
   });
   clearAllCache();
   return data;
@@ -288,7 +301,18 @@ export const fetchCategories = (params?: Record<string, any>) => request('/categ
 
 export const fetchServices = (params?: Record<string, any>) => request('/services/', { params });
 export const fetchService = (id: string | number) => request(`/services/${id}/`);
-export const createService = (body: Record<string, any>) => request('/services/', { method: 'POST', body });
+export const createService = (body: Record<string, any>) => request('/services/', {
+  method: 'POST',
+  body: {
+    title: body.title,
+    category: body.category || body.label || 'General',
+    description: body.description,
+    price: Number(body.price || 0),
+    creator_id: Number(body.creator_id || 0),
+    image_url: body.image_url || null,
+    is_public: body.is_public ?? true,
+  },
+});
 export const updateService = (id: string | number, body: Record<string, any>) => request(`/services/${id}/`, { method: 'PATCH', body });
 export const deleteService = (id: string | number) => request(`/services/${id}/`, { method: 'DELETE' });
 
@@ -296,7 +320,16 @@ export const deleteService = (id: string | number) => request(`/services/${id}/`
 
 export const fetchOrders = (params?: Record<string, any>) => request('/orders/', { params });
 export const fetchOrder = (id: string | number) => request(`/orders/${id}/`);
-export const createOrder = (body: Record<string, any>) => request('/orders/', { method: 'POST', body });
+export const createOrder = async (body: Record<string, any>) => {
+  let serviceId = body.service_id || body.id;
+  if (!serviceId && body.creator_id && body.service_title) {
+    const services = await fetchServices({ creator_id: body.creator_id });
+    const rows = services?.results || services || [];
+    const match = rows.find((service: any) => service.title === body.service_title);
+    serviceId = match?.id;
+  }
+  return request('/orders/', { method: 'POST', body: { service_id: Number(serviceId) } });
+};
 export const updateOrder = (id: string | number, body: Record<string, any>) => request(`/orders/${id}/`, { method: 'PATCH', body });
 export const updateOrderStatus = (id: string | number, status: string) => request(`/orders/${id}/update_status/`, { method: 'POST', body: { status } });
 
@@ -307,12 +340,51 @@ export const fetchOrderTimeline = (params?: Record<string, any>) => request('/or
 // ── Reviews ────────────────────────────────────────────────────────────────
 
 export const fetchReviews = (params?: Record<string, any>) => request('/reviews/', { params });
-export const createReview = (body: Record<string, any>) => request('/reviews/', { method: 'POST', body });
+export const createReview = (body: Record<string, any>) => request('/reviews/', {
+  method: 'POST',
+  body: {
+    order_id: Number(body.order_id),
+    reviewer_id: Number(body.reviewer_id || 0),
+    reviewee_id: Number(body.reviewee_id),
+    rating: Number(body.rating),
+    comment: body.comment || body.review_text || '',
+  },
+});
+export const updateReview = (id: string | number, body: Record<string, any>) => request(`/reviews/${id}/`, {
+  method: 'PUT',
+  body: {
+    rating: body.rating == null ? undefined : Number(body.rating),
+    comment: body.comment || body.review_text,
+  },
+});
 
 // ── Messages ───────────────────────────────────────────────────────────────
 
 export const fetchMessages = (params?: Record<string, any>) => request('/messages/', { params });
-export const sendMessage = (body: Record<string, any>) => request('/messages/', { method: 'POST', body });
+export const sendMessage = (body: Record<string, any>) => request('/messages/', {
+  method: 'POST',
+  body: {
+    order_id: body.order_id == null ? null : Number(body.order_id),
+    receiver_id: Number(body.receiver_id),
+    content: body.content || (body.media_url ? 'Image attachment' : ''),
+    media_url: body.media_url || null,
+    is_read: !!body.is_read,
+    is_deleted: !!body.is_deleted,
+    from_smart_match: !!body.from_smart_match,
+    service_data: body.service_data || null,
+  },
+});
+export const updateMessage = (id: string | number, body: Record<string, any>) => request(`/messages/${id}/`, {
+  method: 'PATCH',
+  body: {
+    content: body.content,
+    media_url: body.media_url,
+    is_read: body.is_read,
+    is_deleted: body.is_deleted,
+    from_smart_match: body.from_smart_match,
+    service_data: body.service_data,
+  },
+});
 
 // ── Follows ────────────────────────────────────────────────────────────────
 
@@ -324,6 +396,7 @@ export const deleteFollow = (id: string | number) => request(`/follows/${id}/`, 
 
 export const fetchBlocks = (params?: Record<string, any>) => request('/blocks/', { params });
 export const createBlock = (body: Record<string, any>) => request('/blocks/', { method: 'POST', body });
+export const deleteBlock = (id: string | number) => request(`/blocks/${id}/`, { method: 'DELETE' });
 
 // ── Reports ────────────────────────────────────────────────────────────────
 
@@ -333,11 +406,21 @@ export const createReport = (body: Record<string, any>) => request('/reports/', 
 // ── Matches ────────────────────────────────────────────────────────────────
 
 export const fetchMatches = (params?: Record<string, any>) => request('/matches/', { params });
+export const createMatch = (body: Record<string, any>) => request('/matches/', { method: 'POST', body });
+export const updateMatch = (id: string | number, body: Record<string, any>) => request(`/matches/${id}/`, { method: 'PUT', body });
 
 // ── Payment Methods ────────────────────────────────────────────────────────
 
 export const fetchPaymentMethods = (params?: Record<string, any>) => request('/payment-methods/', { params });
-export const createPaymentMethod = (body: Record<string, any>) => request('/payment-methods/', { method: 'POST', body });
+export const createPaymentMethod = (body: Record<string, any>) => request('/payment-methods/', {
+  method: 'POST',
+  body: {
+    user_id: Number(body.user_id || 0),
+    method_type: body.method_type || body.type || body.wallet_type || 'Payment Method',
+    masked_number: body.masked_number || body.account_number || body.account_details || '',
+  },
+});
+export const deletePaymentMethod = (id: string | number) => request(`/payment-methods/${id}/`, { method: 'DELETE' });
 
 // ── Support Tickets ────────────────────────────────────────────────────────
 
@@ -348,7 +431,17 @@ export const updateSupportTicket = (id: string | number, body: Record<string, an
 // ── Wallets ────────────────────────────────────────────────────────────────
 
 export const fetchWallets = (params?: Record<string, any>) => request('/wallets/', { params });
-export const createWallet = (body: Record<string, any>) => request('/wallets/', { method: 'POST', body });
+export const createWallet = (body: Record<string, any>) => request('/wallets/', {
+  method: 'POST',
+  body: {
+    user_id: Number(body.user_id || 0),
+    wallet_type: body.wallet_type || body.type || 'Createch Wallet',
+    account_name: body.account_name || 'Account',
+    account_number: body.account_number || '',
+  },
+});
+export const updateWallet = (id: string | number, body: Record<string, any>) => request(`/wallets/${id}/`, { method: 'PATCH', body });
+export const deleteWallet = (id: string | number) => request(`/wallets/${id}/`, { method: 'DELETE' });
 
 // ── Withdrawals ────────────────────────────────────────────────────────────
 

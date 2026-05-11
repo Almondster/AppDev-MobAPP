@@ -641,6 +641,7 @@ export default function ChatRoomScreen() {
 
       // Create order
       const { error } = await supabase.from('orders').insert({
+        service_id: selectedServiceToBook.service_id,
         client_id: currentUser.uid,
         creator_id: serviceData.creator_id,
         service_title: serviceData.title,

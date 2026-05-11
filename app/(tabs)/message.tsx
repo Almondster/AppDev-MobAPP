@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
@@ -14,7 +14,7 @@ import {
   TextInput,
   View
 } from 'react-native';
-import { MessageThread, MOCK_THREADS } from '../../constants/mockData';
+import { MessageThread } from '../../constants/mockData';
 import { useTheme } from '../../context/ThemeContext';
 import { Shadows } from '../../constants/theme';
 import { supabase } from '../../frontend/store';
@@ -42,7 +42,6 @@ export default function MessageScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const user = auth.currentUser;
-  const [role, setRole] = useState<'client' | 'creator'>('client');
 
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterUnread, setFilterUnread] = useState(false);
@@ -50,56 +49,77 @@ export default function MessageScreen() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchMessages = async () => {
-      if (!user) {
-        if (isMounted) setLoading(false);
-        return;
-      }
-      try {
-        const { data: userData } = await supabase.from('users').select('role').eq('firebase_uid', user.uid).single();
-        const currentRole = userData?.role || 'client';
-        if (isMounted) setRole(currentRole);
+  const fetchThreads = useCallback(async (showSpinner = true) => {
+    if (!user) {
+      setThreads([]);
+      setFilteredThreads([]);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
 
-        if (currentRole === 'creator') {
-          if (isMounted) {
-            setThreads([]);
-            setFilteredThreads([]);
-          }
-        } else {
-          const clientThreads: MessageThread[] = [
-            {
-              partnerId: 'mock-creator-1',
-              partnerName: 'Maya Santos',
-              partnerAvatar: null,
-              lastMessage: 'I drafted three logo directions for you.',
-              lastMessageTime: new Date(new Date().setHours(23, 43, 0)),
-              unreadCount: 1,
-            },
-            {
-              partnerId: 'mock-creator-2',
-              partnerName: 'Noah Lim',
-              partnerAvatar: null,
-              lastMessage: 'The landing page build is ready for review.',
-              lastMessageTime: new Date(new Date().setHours(5, 43, 0)),
-              unreadCount: 0,
-            }
-          ];
-          if (isMounted) {
-            setThreads(clientThreads);
-            setFilteredThreads(clientThreads);
-          }
+    if (showSpinner) setLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const grouped = new Map<string, MessageThread>();
+
+      (data || []).forEach((message: any) => {
+        const senderId = String(message.sender_id);
+        const receiverId = String(message.receiver_id);
+        const partnerId = senderId === user.uid ? receiverId : senderId;
+        const sentByMe = senderId === user.uid;
+        const timestamp = new Date(message.created_at || message.timestamp || Date.now());
+        const existing = grouped.get(partnerId);
+        const content = message.is_deleted
+          ? 'message unsent.'
+          : message.media_url
+            ? 'Image attachment'
+            : message.content || '';
+
+        if (!existing || timestamp > existing.lastMessageTime) {
+          grouped.set(partnerId, {
+            partnerId,
+            partnerName: sentByMe
+              ? message.receiver_name || existing?.partnerName || 'User'
+              : message.sender_name || existing?.partnerName || 'User',
+            partnerAvatar: null,
+            lastMessage: content,
+            lastMessageTime: timestamp,
+            unreadCount: existing?.unreadCount || 0,
+          });
         }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchMessages();
-    return () => { isMounted = false; };
+
+        if (!sentByMe && !message.is_read && !message.is_deleted) {
+          const current = grouped.get(partnerId);
+          if (current) current.unreadCount += 1;
+        }
+      });
+
+      const nextThreads = Array.from(grouped.values())
+        .sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
+
+      setThreads(nextThreads);
+      setFilteredThreads(nextThreads);
+    } catch (err) {
+      console.error('Error fetching message threads:', err);
+      setThreads([]);
+      setFilteredThreads([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchThreads();
+  }, [fetchThreads]);
 
   const applyFilters = (threadsList: MessageThread[], unreadFilter: boolean, sort: 'recent' | 'unread', search: string) => {
     let result = [...threadsList];
@@ -117,7 +137,10 @@ export default function MessageScreen() {
     applyFilters(threads, filterUnread, sortBy, searchQuery);
   }, [filterUnread, sortBy, threads, searchQuery]);
 
-  const onRefresh = () => { setRefreshing(true); setTimeout(() => setRefreshing(false), 500); };
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchThreads(false);
+  };
 
   const getTimeDisplay = (date: Date) => {
     const now = new Date();

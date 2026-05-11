@@ -1,5 +1,13 @@
-import { clone, createLocalUserRecord, ensureUserRecord, findUserByEmail, findUserByUid, initialSessionUserId } from '@/frontend/seed';
-import { loginAPI, registerAPI, clearToken, getStoredUser, setStoredUser as apiSetStoredUser } from '@/frontend/api';
+import { clone, createLocalUserRecord, ensureUserRecord, findUserByEmail } from '@/frontend/seed';
+import {
+  loginAPI,
+  registerAPI,
+  clearToken,
+  fetchMe,
+  getStoredUser,
+  setStoredUser as apiSetStoredUser,
+  updateUser,
+} from '@/frontend/api';
 
 export type User = {
   uid: string;
@@ -26,17 +34,20 @@ type Credential = {
 };
 
 const listeners = new Set<(user: User | null) => void>();
+const ENABLE_LOCAL_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_LOCAL_FALLBACK === 'true';
+let authReady = false;
+let restorePromise: Promise<void> | null = null;
 
 const buildUser = (record: Record<string, any>, providerId = 'password'): User => ({
-  uid: record.firebase_uid,
+  uid: String(record.firebase_uid || record.id),
   email: record.email || null,
-  displayName: record.full_name || record.first_name || null,
+  displayName: record.full_name || record.username || record.first_name || null,
   photoURL: record.avatar_url || null,
   emailVerified: true,
   providerData: [{ providerId }],
   reload: async () => {},
   role: record.role,
-  full_name: record.full_name,
+  full_name: record.full_name || record.username,
 });
 
 const notify = () => {
@@ -44,13 +55,8 @@ const notify = () => {
   listeners.forEach((listener) => listener(user));
 };
 
-const getInitialUser = () => {
-  const record = findUserByUid(initialSessionUserId);
-  return record ? buildUser(record) : null;
-};
-
 export const auth: AuthState = {
-  currentUser: getInitialUser(),
+  currentUser: null,
 };
 
 export const session = auth;
@@ -58,6 +64,40 @@ export const session = auth;
 const setCurrentUserFromRecord = (record: Record<string, any> | null, providerId = 'password') => {
   auth.currentUser = record ? buildUser(record, providerId) : null;
   notify();
+};
+
+const normalizeBackendUser = (record: Record<string, any>) => ({
+  ...record,
+  id: record.id ?? record.firebase_uid,
+  firebase_uid: String(record.firebase_uid || record.id),
+  full_name: record.full_name || record.username,
+});
+
+const restoreStoredSession = async () => {
+  if (authReady) return;
+  if (!restorePromise) {
+    restorePromise = (async () => {
+      const stored = await getStoredUser();
+      if (!stored) {
+        auth.currentUser = null;
+        authReady = true;
+        return;
+      }
+
+      try {
+        const freshUser = normalizeBackendUser(await fetchMe());
+        await apiSetStoredUser(freshUser);
+        ensureUserRecord(freshUser);
+        auth.currentUser = buildUser(freshUser);
+      } catch {
+        await clearToken();
+        auth.currentUser = null;
+      } finally {
+        authReady = true;
+      }
+    })();
+  }
+  await restorePromise;
 };
 
 const syncRecordFromUser = (user: User) => {
@@ -74,7 +114,9 @@ export const getAuth = () => auth;
 
 export const onAuthStateChanged = (authState: AuthState, callback: (user: User | null) => void) => {
   listeners.add(callback);
-  setTimeout(() => callback(authState.currentUser ? clone(authState.currentUser) : null), 0);
+  restoreStoredSession().then(() => {
+    callback(authState.currentUser ? clone(authState.currentUser) : null);
+  });
   return () => {
     listeners.delete(callback);
   };
@@ -99,6 +141,9 @@ export const signInWithEmailAndPassword = async (_authState: AuthState, email: s
     setCurrentUserFromRecord(record, 'password');
     return { user: auth.currentUser as User };
   } catch (err: any) {
+    if (!ENABLE_LOCAL_FALLBACK) {
+      throw err;
+    }
     // Fallback to local mock if backend unreachable
     console.warn('Backend login failed, falling back to local:', err.message);
     let record = findUserByEmail(email.trim());
@@ -135,6 +180,9 @@ export const createUserWithEmailAndPassword = async (_authState: AuthState, emai
     setCurrentUserFromRecord(record, 'password');
     return { user: auth.currentUser as User };
   } catch (err: any) {
+    if (!ENABLE_LOCAL_FALLBACK) {
+      throw err;
+    }
     console.warn('Backend register failed, falling back to local:', err.message);
     const existing = findUserByEmail(email.trim());
     const record = existing || createLocalUserRecord({ email: email.trim(), full_name: email.split('@')[0] });
@@ -158,6 +206,9 @@ export const signInWithCredential = async (_authState: AuthState, credential: Cr
     setCurrentUserFromRecord(record, credential.providerId);
     return { user: auth.currentUser as User };
   } catch {
+    if (!ENABLE_LOCAL_FALLBACK) {
+      throw new Error('Social login is not configured for this backend yet. Use email and password.');
+    }
     // Fallback to local
     const existing = findUserByEmail(email);
     const providerLabel = credential.providerId.includes('github') ? 'GitHub User' : 'Google User';
@@ -186,6 +237,15 @@ export const updateProfile = async (user: User, updates: { displayName?: string 
     user.photoURL = updates.photoURL;
   }
   syncRecordFromUser(user);
+  try {
+    const updated = await updateUser(user.uid, {
+      username: user.displayName,
+      avatar_url: user.photoURL,
+    });
+    await apiSetStoredUser(normalizeBackendUser(updated));
+  } catch (err) {
+    if (!ENABLE_LOCAL_FALLBACK) throw err;
+  }
   if (auth.currentUser?.uid === user.uid) {
     auth.currentUser = clone(user);
     notify();

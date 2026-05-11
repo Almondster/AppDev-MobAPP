@@ -227,7 +227,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="order"
         options={{
-          title: role === 'creator' ? 'My Gigs' : 'Orders',
+          title: 'Orders',
           href: role === 'admin' ? null : undefined,
           tabBarBadge: unseenOrderCount > 0 ? unseenOrderCount : undefined,
           tabBarBadgeStyle: {

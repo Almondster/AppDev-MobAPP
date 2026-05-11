@@ -35,6 +35,7 @@ type EscrowStatus = 'pending' | 'held' | 'released_to_creator' | 'refunded_to_cl
 
 type Order = {
   id: number;
+  service_id?: number;
   service_title: string;
   price: string;
   status: OrderStatus;
@@ -352,6 +353,31 @@ export default function OrderScreen() {
         }
       }) || [];
 
+      const serviceIds = Array.from(new Set(
+        filteredData
+          .filter((order) => !order.image_url && order.service_id)
+          .map((order) => order.service_id)
+      ));
+      let serviceImages = new Map<string, string>();
+
+      if (serviceIds.length > 0) {
+        const { data: serviceRows } = await supabase
+          .from('services')
+          .select('id, image_url')
+          .in('id', serviceIds);
+
+        serviceImages = new Map(
+          (serviceRows || [])
+            .filter((service) => service.image_url)
+            .map((service) => [String(service.id), service.image_url])
+        );
+      }
+
+      const ordersWithServiceImages = filteredData.map((order) => ({
+        ...order,
+        image_url: order.image_url || serviceImages.get(String(order.service_id)),
+      }));
+
       // Custom sorting: Priority by status, then by updated_at
       const getStatusPriority = (order: Order): number => {
         // In-progress with held escrow (highest priority - active work)
@@ -382,7 +408,7 @@ export default function OrderScreen() {
         return 9;
       };
 
-      const sortedData = filteredData.sort((a, b) => {
+      const sortedData = ordersWithServiceImages.sort((a, b) => {
         const priorityA = getStatusPriority(a);
         const priorityB = getStatusPriority(b);
 
@@ -620,6 +646,7 @@ export default function OrderScreen() {
 
       const now = new Date().toISOString();
       const { error } = await supabase.from('orders').insert({
+        service_id: selectedOrder.service_id,
         client_id: user.uid,
         creator_id: selectedOrder.creator_id,
         service_title: selectedOrder.service_title,
@@ -947,6 +974,16 @@ export default function OrderScreen() {
     }
   };
 
+  const formatOrderPrice = (price: string | number | undefined) => {
+    const value = String(price ?? '0');
+    return value.includes('₱') ? value : `₱ ${value}`;
+  };
+
+  const formatOrderDate = (date?: string) => {
+    if (!date) return 'No date';
+    return new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   const themeStyles = {
     container: { backgroundColor: theme.background },
     header: { backgroundColor: theme.card },
@@ -992,38 +1029,49 @@ export default function OrderScreen() {
 
         {/* --- 1. CARD HEADER (Image, Title, Trash) --- */}
         <View style={styles.cardHeader}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            {item.image_url && item.image_url !== '' ? (
-              <Image source={{ uri: item.image_url }} style={styles.orderImage} resizeMode="cover" />
-            ) : (
-              <View style={[styles.serviceIcon, { backgroundColor: isDark ? '#333' : '#e2e8f0' }]}>
-                <Ionicons name="briefcase-outline" size={24} color={theme.text} />
-              </View>
-            )}
-            <View style={{ marginLeft: 12, flex: 1 }}>
-              <Text style={[styles.serviceTitle, themeStyles.text]} numberOfLines={1}>
+          {item.image_url && item.image_url !== '' ? (
+            <Image source={{ uri: item.image_url }} style={styles.orderImage} resizeMode="cover" />
+          ) : (
+            <View style={[styles.serviceIcon, { backgroundColor: isDark ? '#333' : '#e2e8f0' }]}>
+              <Ionicons name="briefcase-outline" size={28} color={theme.textSecondary} />
+            </View>
+          )}
+          <View style={styles.orderSummary}>
+            <View style={styles.orderTitleRow}>
+              <Text style={[styles.serviceTitle, themeStyles.text]} numberOfLines={2}>
                 {item.service_title}
               </Text>
-              <Text style={[styles.partnerName, themeStyles.textSecondary]} numberOfLines={1}>
-                {label}: {otherName || 'Unknown'}
-              </Text>
+              {isDeletable && (
+                <Pressable onPress={() => handleDeleteOrder(item.id)} style={styles.deleteButton}>
+                  <Ionicons name="trash-outline" size={18} color={theme.textSecondary} />
+                </Pressable>
+              )}
+            </View>
+            <Text style={[styles.partnerName, themeStyles.textSecondary]} numberOfLines={1}>
+              {label}: {otherName || 'Unknown'}
+            </Text>
+            <View style={styles.metaRow}>
+              <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+                <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Ionicons name="calendar-outline" size={13} color={theme.textSecondary} />
+                <Text style={[styles.metaText, themeStyles.textSecondary]}>{formatOrderDate(item.updated_at || item.created_at)}</Text>
+              </View>
             </View>
           </View>
-
-          {/* DELETE BUTTON (Conditionally rendered) */}
-          {isDeletable && (
-            <Pressable onPress={() => handleDeleteOrder(item.id)} style={{ padding: 8, marginLeft: 4 }}>
-              <Ionicons name="trash-outline" size={20} color={theme.textSecondary} />
-            </Pressable>
-          )}
         </View>
 
         {/* --- 2. STATUS & PRICE --- */}
-        <View style={[styles.infoRow, { marginBottom: 12 }]}>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-            <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
+        <View style={[styles.infoRow, { borderTopColor: theme.cardBorder }]}>
+          <View>
+            <Text style={[styles.infoLabel, themeStyles.textSecondary]}>Order total</Text>
+            <Text style={[styles.priceText, themeStyles.text]}>{formatOrderPrice(item.price)}</Text>
           </View>
-          <Text style={[styles.priceText, themeStyles.text]}>₱ {item.price}</Text>
+          <View style={styles.orderIdBlock}>
+            <Text style={[styles.infoLabel, themeStyles.textSecondary]}>Order</Text>
+            <Text style={[styles.orderIdText, themeStyles.text]}>#{item.id}</Text>
+          </View>
         </View>
 
         {/* --- NEW: DEADLINE & ESCROW MANAGEMENT --- */}
@@ -1165,8 +1213,8 @@ export default function OrderScreen() {
     );
   };
 
-  const emptyTitle = role === 'creator' ? 'No Gigs Found' : t('noOrders');
-  const emptySubtitle = role === 'creator' ? 'Services you offer will appear here once booked.' : 'Your order history will appear here.';
+  const emptyTitle = t('noOrders');
+  const emptySubtitle = 'Your order history will appear here.';
   const getAlertStyle = () => {
     switch (alertConfig.type) {
       case 'error': return { color: '#ef4444', icon: 'close-circle' as const, bg: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.08)' };
@@ -1185,7 +1233,7 @@ export default function OrderScreen() {
       <View style={[styles.header, themeStyles.header]}>
         <View style={styles.headerTop}>
           <Text style={[styles.title, themeStyles.text]}>
-            {role === 'creator' ? t('myGigs') : t('myOrders')}
+            {t('myOrders') || 'Orders'}
           </Text>
           <Pressable onPress={() => setIsSearchVisible(!isSearchVisible)} style={styles.iconButton}>
             <Ionicons name="search" size={24} color={theme.text} />
@@ -1196,7 +1244,7 @@ export default function OrderScreen() {
           <View style={[styles.searchBarContainer, themeStyles.input]}>
             <Ionicons name="search" size={18} color={theme.textSecondary} />
             <TextInput
-              placeholder={role === 'creator' ? 'Search gigs...' : t('searchOrders')}
+              placeholder={t('searchOrders')}
               placeholderTextColor={theme.textSecondary}
               style={[styles.searchInput, { color: theme.text }]}
               value={searchQuery}
@@ -1835,13 +1883,13 @@ const styles = StyleSheet.create({
   searchBarContainer: { marginTop: 16, marginHorizontal: 24, borderRadius: 12, flexDirection: 'row', paddingHorizontal: 16, height: 48, alignItems: 'center' },
   searchInput: { flex: 1, marginLeft: 10, fontSize: 16, height: '100%' },
   pillContainer: {
-    paddingTop: 24,
-    paddingBottom: 12,
+    paddingTop: 20,
+    paddingBottom: 8,
   },
   pill: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 999,
     borderWidth: 1,
     marginRight: 8,
   },
@@ -1849,40 +1897,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  listContent: { padding: 24, paddingBottom: 40, flexGrow: 1 },
+  listContent: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 40, flexGrow: 1 },
   notificationDot: { position: 'absolute', top: 12, right: 12, width: 8, height: 8, borderRadius: 4, backgroundColor: '#ef4444', zIndex: 10 },
   card: {
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
     ...Shadows.lg,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  orderImage: { width: 48, height: 48, borderRadius: 10, backgroundColor: '#e2e8f0' },
-  serviceIcon: { width: 48, height: 48, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  serviceTitle: { fontSize: 16, fontWeight: '700' },
-  partnerName: { fontSize: 12, marginTop: 2 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  statusText: { fontSize: 11, fontWeight: '700' },
-  priceText: { fontSize: 16, fontWeight: '700' },
+  cardHeader: { flexDirection: 'row', alignItems: 'stretch', marginBottom: 12 },
+  orderImage: { width: 76, height: 76, borderRadius: 14, backgroundColor: '#e2e8f0' },
+  serviceIcon: { width: 76, height: 76, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  orderSummary: { flex: 1, marginLeft: 12, justifyContent: 'space-between', minHeight: 76 },
+  orderTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  serviceTitle: { flex: 1, fontSize: 16, fontWeight: '800', lineHeight: 21 },
+  deleteButton: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  partnerName: { fontSize: 12, marginTop: 2, fontWeight: '600' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 11, fontWeight: '600' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, paddingTop: 12, marginBottom: 12 },
+  infoLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  statusBadge: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999 },
+  statusText: { fontSize: 10, fontWeight: '800' },
+  priceText: { fontSize: 18, fontWeight: '800', marginTop: 2 },
+  orderIdBlock: { alignItems: 'flex-end' },
+  orderIdText: { fontSize: 14, fontWeight: '800', marginTop: 2 },
   infoBox: { flexDirection: 'row', padding: 10, borderRadius: 8, alignItems: 'center' },
-  actionFooter: { marginTop: 16, flexDirection: 'row', gap: 10 },
+  actionFooter: { marginTop: 12, flexDirection: 'row', gap: 10 },
   iconActionBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   mainActionBtn: {
     flex: 1,
-    height: 48,
-    borderRadius: 14,
+    minHeight: 44,
+    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 10,
   },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 100, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 20, fontWeight: '700', marginTop: 16, marginBottom: 8, textAlign: 'center' },
