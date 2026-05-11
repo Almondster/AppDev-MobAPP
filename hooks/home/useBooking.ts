@@ -47,6 +47,7 @@ export const handleBookService = async (
     const { error } = await supabase
       .from('orders')
       .insert({
+        service_id: service.id,
         client_id: user.uid,
         creator_id: service.creator_id,
         service_title: service.title,

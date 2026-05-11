@@ -26,6 +26,20 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const parseMoney = (value: unknown) => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const numeric = Number(value.replace(/[^\d.-]/g, ""));
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+  return 0;
+};
+
+const formatProjectPrice = (value: unknown) => {
+  if (typeof value === "string" && value.includes("₱")) return value;
+  return formatCurrency(parseMoney(value));
+};
+
 // --- SKELETON COMPONENT ---
 const SkeletonItem = ({ style, color }: { style: any; color: string }) => {
   const opacity = useRef(new Animated.Value(0.3)).current;
@@ -83,7 +97,11 @@ export default function CreatorDashboard() {
   const [ongoingProjects, setOngoingProjects] = useState<any[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
 
     try {
       // 1. Get current dashboard stats from RPC (now includes today's views/clicks)
@@ -293,11 +311,7 @@ export default function CreatorDashboard() {
       // Calculate total earnings from orders
       const calculateTotalEarnings = (orders: any[]) => {
         if (!orders) return 0;
-        return orders.reduce((total, order) => {
-          const priceStr = order.price || "0";
-          const numericPrice = parseFloat(priceStr.replace(/[₱,]/g, "")) || 0;
-          return total + numericPrice;
-        }, 0);
+        return orders.reduce((total, order) => total + parseMoney(order.price), 0);
       };
 
       // Use today's views/clicks from RPC (now returned directly)
@@ -356,7 +370,13 @@ export default function CreatorDashboard() {
         ratingTrend: calculateTrend(todayAvgRating, yesterdayAvgRating),
       });
 
-      setOngoingProjects(projects || []);
+      setOngoingProjects(
+        (projects || []).map((project: any) => ({
+          ...project,
+          price: formatProjectPrice(project.price),
+          status: String(project.status || "active"),
+        })),
+      );
     } catch (error) {
       console.error("Error fetching dashboard:", error);
     } finally {
@@ -975,9 +995,7 @@ export default function CreatorDashboard() {
                       {project.service_title || "Untitled Project"}
                     </Text>
                     <Text style={[styles.projectPrice, { color: theme.text }]}>
-                      {project.price?.includes("₱")
-                        ? project.price
-                        : `₱${project.price}`}
+                      {formatProjectPrice(project.price)}
                     </Text>
                   </View>
 
@@ -1001,7 +1019,7 @@ export default function CreatorDashboard() {
                             { color: theme.text, textTransform: "capitalize" },
                           ]}
                         >
-                          {project.status.replace("_", " ")}
+                          {String(project.status || "active").replace("_", " ")}
                         </Text>
                       </View>
                       <View

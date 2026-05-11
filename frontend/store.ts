@@ -1,4 +1,4 @@
-import { clone, findUserByUid, getTable, nextId } from '@/frontend/seed';
+import { clone, ensureUserRecord, findUserByUid, getTable, nextId } from '@/frontend/seed';
 import * as api from '@/frontend/api';
 
 type QueryResult = {
@@ -39,11 +39,167 @@ const TABLE_CREATE_MAP: Record<string, (body: Record<string, any>) => Promise<an
   follows: api.createFollow,
   blocks: api.createBlock,
   reports: api.createReport,
+  matches: api.createMatch,
   'payment_methods': api.createPaymentMethod,
   'support_tickets': api.createSupportTicket,
   'user_wallets': api.createWallet,
   withdrawals: api.createWithdrawal,
 };
+
+const TABLE_UPDATE_MAP: Record<string, (id: string | number, body: Record<string, any>) => Promise<any>> = {
+  users: api.updateUser,
+  creators: api.updateCreator,
+  services: api.updateService,
+  orders: api.updateOrder,
+  reviews: api.updateReview,
+  messages: api.updateMessage,
+  matches: api.updateMatch,
+  'support_tickets': api.updateSupportTicket,
+  'user_wallets': api.updateWallet,
+};
+
+const TABLE_DELETE_MAP: Record<string, (id: string | number) => Promise<any>> = {
+  services: api.deleteService,
+  follows: api.deleteFollow,
+  blocks: api.deleteBlock,
+  'payment_methods': api.deletePaymentMethod,
+  'user_wallets': api.deleteWallet,
+};
+
+const idString = (value: any) => (value == null ? value : String(value));
+
+const splitName = (name: string | null | undefined) => {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  return {
+    first_name: parts[0] || '',
+    last_name: parts.slice(1).join(' '),
+  };
+};
+
+const normalizeRow = (table: string, row: Record<string, any>) => {
+  if (!row) return row;
+
+  if (table === 'users') {
+    const fullName = row.full_name || row.username || row.email?.split('@')[0] || 'User';
+    const normalized = {
+      ...row,
+      id: row.id ?? row.firebase_uid,
+      firebase_uid: idString(row.firebase_uid || row.id),
+      full_name: fullName,
+      username: row.username || fullName,
+      ...splitName(fullName),
+    };
+    ensureUserRecord(normalized);
+    return normalized;
+  }
+
+  if (table === 'creators') {
+    const normalizedUser = row.user ? normalizeRow('users', row.user) : findUserByUid(idString(row.user_id));
+    return {
+      ...row,
+      user_id: idString(row.user_id),
+      skills: typeof row.skills === 'string' ? row.skills.split(',').map((skill: string) => skill.trim()).filter(Boolean) : row.skills,
+      users: normalizedUser,
+      user: normalizedUser,
+    };
+  }
+
+  if (table === 'services') {
+    return {
+      ...row,
+      creator_id: idString(row.creator_id),
+      category: row.category || row.label,
+      label: row.label || row.category,
+      price: row.price == null ? row.price : String(row.price),
+    };
+  }
+
+  if (table === 'orders') {
+    return {
+      ...row,
+      client_id: idString(row.client_id),
+      creator_id: idString(row.creator_id),
+      last_updated_by: idString(row.last_updated_by),
+      deleted_by_creator: idString(row.deleted_by_creator),
+      deleted_by_client: idString(row.deleted_by_client),
+      deleted_by: idString(row.deleted_by),
+      price: row.price == null ? row.price : String(row.price),
+      updated_at: row.updated_at || row.created_at,
+    };
+  }
+
+  if (table === 'messages') {
+    return {
+      ...row,
+      sender_id: idString(row.sender_id),
+      receiver_id: idString(row.receiver_id),
+      created_at: row.created_at || row.timestamp,
+      timestamp: row.timestamp || row.created_at,
+      media_url: row.media_url || null,
+      is_deleted: !!row.is_deleted,
+      from_smart_match: !!row.from_smart_match,
+      service_data: row.service_data || null,
+    };
+  }
+
+  if (table === 'reviews') {
+    return {
+      ...row,
+      reviewer_id: idString(row.reviewer_id),
+      reviewee_id: idString(row.reviewee_id),
+      review_text: row.review_text || row.comment,
+      comment: row.comment || row.review_text,
+    };
+  }
+
+  if (table === 'follows') {
+    return {
+      ...row,
+      follower_id: idString(row.follower_id),
+      following_id: idString(row.following_id),
+    };
+  }
+
+  if (table === 'blocks') {
+    return {
+      ...row,
+      blocker_id: idString(row.blocker_id),
+      blocked_id: idString(row.blocked_id),
+    };
+  }
+
+  if (table === 'matches') {
+    return {
+      ...row,
+      client_id: idString(row.client_id),
+      creator_id: idString(row.creator_id),
+    };
+  }
+
+  if (table === 'payment_methods') {
+    return {
+      ...row,
+      user_id: idString(row.user_id),
+      type: row.type || row.method_type,
+      method_type: row.method_type || row.type,
+      account_number: row.account_number || row.masked_number,
+      masked_number: row.masked_number || row.account_number,
+    };
+  }
+
+  if (table === 'user_wallets' || table === 'withdrawals' || table === 'daily_analytics') {
+    return {
+      ...row,
+      user_id: idString(row.user_id),
+      creator_id: idString(row.creator_id),
+    };
+  }
+
+  return row;
+};
+
+const normalizeRows = (table: string, rows: Record<string, any>[]) =>
+  rows.map((row) => normalizeRow(table, row));
 
 const parsePrimitive = (value: any) => {
   if (value === null || typeof value === 'number' || typeof value === 'boolean') {
@@ -90,9 +246,17 @@ const splitTopLevel = (value: string) => {
   return parts.map((part) => part.trim()).filter(Boolean);
 };
 
+const sameValue = (actual: any, expected: any) => {
+  if (actual === expected) return true;
+  if (expected === null) return actual == null;
+  if (actual == null || expected == null) return false;
+  return String(actual) === String(expected);
+};
+
 const compare = (actual: any, operator: string, expected: any) => {
-  if (operator === 'eq') return actual === expected;
-  if (operator === 'is') return actual === expected;
+  if (operator === 'eq' || operator === 'is') {
+    return sameValue(actual, expected);
+  }
   if (operator === 'gt') return actual > expected;
   if (operator === 'gte') return actual >= expected;
   if (operator === 'lt') return actual < expected;
@@ -103,7 +267,7 @@ const compare = (actual: any, operator: string, expected: any) => {
     return text.includes(pattern);
   }
   if (operator === 'in') {
-    return Array.isArray(expected) ? expected.includes(actual) : false;
+    return Array.isArray(expected) ? expected.some((value) => sameValue(actual, value)) : false;
   }
   return true;
 };
@@ -206,8 +370,8 @@ class LocalChannel {
 
 class ApiQueryBuilder implements PromiseLike<any> {
   private table: string;
-  private filters: Array<{ column: string; operator: string; value: any }> = [];
-  private clientFilters: Array<(row: Record<string, any>) => boolean> = [];
+  private filters: { column: string; operator: string; value: any }[] = [];
+  private clientFilters: ((row: Record<string, any>) => boolean)[] = [];
   private orderByConfig: { column: string; ascending: boolean } | null = null;
   private limitValue: number | null = null;
   private mode: 'select' | 'insert' | 'update' | 'delete' = 'select';
@@ -246,24 +410,24 @@ class ApiQueryBuilder implements PromiseLike<any> {
 
   eq(column: string, value: any) {
     this.filters.push({ column, operator: 'eq', value });
-    this.clientFilters.push((row) => row[column] === value);
+    this.clientFilters.push((row) => sameValue(row[column], value));
     return this;
   }
 
   in(column: string, values: any[]) {
-    this.clientFilters.push((row) => values.includes(row[column]));
+    this.clientFilters.push((row) => values.some((value) => sameValue(row[column], value)));
     return this;
   }
 
   not(column: string, operator: string, value: any) {
     if (operator === 'in') {
       const list = parseInList(value);
-      this.clientFilters.push((row) => !list.includes(row[column]));
+      this.clientFilters.push((row) => !list.some((item) => sameValue(row[column], item)));
       return this;
     }
 
     if (operator === 'is') {
-      this.clientFilters.push((row) => row[column] !== value);
+      this.clientFilters.push((row) => !sameValue(row[column], value));
       return this;
     }
 
@@ -272,7 +436,7 @@ class ApiQueryBuilder implements PromiseLike<any> {
   }
 
   is(column: string, value: any) {
-    this.clientFilters.push((row) => row[column] === value);
+    this.clientFilters.push((row) => sameValue(row[column], value));
     return this;
   }
 
@@ -347,7 +511,7 @@ class ApiQueryBuilder implements PromiseLike<any> {
         if (!fetchFn) throw new Error(`No API endpoint for table: ${this.table}`);
 
         const data = await fetchFn(params);
-        let rows: Record<string, any>[] = data?.results || data || [];
+        let rows: Record<string, any>[] = normalizeRows(this.table, data?.results || data || []);
 
         // Apply client-side filters that the API doesn't support
         rows = rows.filter((row) => this.clientFilters.every((filter) => filter(row)));
@@ -390,7 +554,7 @@ class ApiQueryBuilder implements PromiseLike<any> {
         const inserted = [];
         for (const row of this.insertPayload) {
           const result = await createFn(row);
-          inserted.push(result);
+          inserted.push(normalizeRow(this.table, result));
         }
 
         if (this.singleMode) {
@@ -399,9 +563,47 @@ class ApiQueryBuilder implements PromiseLike<any> {
         return { data: inserted, error: null, count: null };
       }
 
-      // For update/delete, fall back to local for now
-      if (this.mode === 'update') return this.executeLocalUpdate();
-      if (this.mode === 'delete') return this.executeLocalDelete();
+      if (this.mode === 'update') {
+        if (this.table === 'services' && this.updatePayload.is_deleted === true) {
+          const deleteFn = TABLE_DELETE_MAP[this.table];
+          if (deleteFn) {
+            const targetIds = await this.getTargetIdsViaApi();
+            for (const id of targetIds) {
+              await deleteFn(id);
+            }
+            const deletedRows = targetIds.map((id) => ({ id, ...this.updatePayload }));
+            if (this.singleMode) {
+              return { data: deletedRows[0] || null, error: null, count: deletedRows.length };
+            }
+            return { data: deletedRows, error: null, count: deletedRows.length };
+          }
+        }
+
+        const updateFn = TABLE_UPDATE_MAP[this.table];
+        if (!updateFn) return this.executeLocalUpdate();
+
+        const targetIds = await this.getTargetIdsViaApi();
+        const updated = [];
+        for (const id of targetIds) {
+          updated.push(normalizeRow(this.table, await updateFn(id, this.updatePayload)));
+        }
+
+        if (this.singleMode) {
+          return { data: updated[0] || null, error: null, count: updated.length };
+        }
+        return { data: updated, error: null, count: updated.length };
+      }
+
+      if (this.mode === 'delete') {
+        const deleteFn = TABLE_DELETE_MAP[this.table];
+        if (!deleteFn) return this.executeLocalDelete();
+
+        const targetIds = await this.getTargetIdsViaApi();
+        for (const id of targetIds) {
+          await deleteFn(id);
+        }
+        return { data: null, error: null, count: targetIds.length };
+      }
 
       return { data: null, error: null };
     } catch (err: any) {
@@ -412,8 +614,17 @@ class ApiQueryBuilder implements PromiseLike<any> {
 
   // ── Local fallback methods (unchanged from original) ──
 
+  private async getTargetIdsViaApi(): Promise<(string | number)[]> {
+    const fetchFn = TABLE_FETCH_MAP[this.table];
+    if (!fetchFn) return [];
+    const data = await fetchFn(this.buildApiParams());
+    const rows = normalizeRows(this.table, data?.results || data || [])
+      .filter((row) => this.clientFilters.every((filter) => filter(row)));
+    return rows.map((row) => row.id).filter((id) => id != null);
+  }
+
   private getFilteredRows(): Record<string, any>[] {
-    const baseRows: Record<string, any>[] = enrichRows(this.table, getTable(this.table) as Record<string, any>[]).map((row) => deepClone(row));
+    const baseRows: Record<string, any>[] = enrichRows(this.table, normalizeRows(this.table, getTable(this.table) as Record<string, any>[])).map((row) => deepClone(row));
     let rows: Record<string, any>[] = baseRows.filter((row) => this.clientFilters.every((filter) => filter(row)));
 
     if (this.orderByConfig) {
