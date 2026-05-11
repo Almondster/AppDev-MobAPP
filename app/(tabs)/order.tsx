@@ -1068,10 +1068,6 @@ export default function OrderScreen() {
             <Text style={[styles.infoLabel, themeStyles.textSecondary]}>Order total</Text>
             <Text style={[styles.priceText, themeStyles.text]}>{formatOrderPrice(item.price)}</Text>
           </View>
-          <View style={styles.orderIdBlock}>
-            <Text style={[styles.infoLabel, themeStyles.textSecondary]}>Order</Text>
-            <Text style={[styles.orderIdText, themeStyles.text]}>#{item.id}</Text>
-          </View>
         </View>
 
         {/* --- NEW: DEADLINE & ESCROW MANAGEMENT --- */}
@@ -1921,8 +1917,6 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999 },
   statusText: { fontSize: 10, fontWeight: '800' },
   priceText: { fontSize: 18, fontWeight: '800', marginTop: 2 },
-  orderIdBlock: { alignItems: 'flex-end' },
-  orderIdText: { fontSize: 14, fontWeight: '800', marginTop: 2 },
   infoBox: { flexDirection: 'row', padding: 10, borderRadius: 8, alignItems: 'center' },
   actionFooter: { marginTop: 12, flexDirection: 'row', gap: 10 },
   iconActionBtn: {

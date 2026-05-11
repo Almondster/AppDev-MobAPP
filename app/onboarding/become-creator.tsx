@@ -1,6 +1,7 @@
 import { CREATOR_TERMS_OF_SERVICE, getFormattedToS } from '@/constants/creatorTermsOfService';
 import { useTheme } from '@/context/ThemeContext';
 import { auth } from '@/frontend/session';
+import { setStoredUser } from '@/frontend/api';
 import { supabase } from '@/frontend/store';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { decode } from 'base64-arraybuffer';
@@ -441,6 +442,7 @@ export default function BecomeCreatorScreen() {
       const { error: userError } = await supabase
         .from('users')
         .update({
+          username: fullName,
           first_name: firstName,
           middle_name: middleName,
           last_name: lastName,
@@ -462,21 +464,42 @@ export default function BecomeCreatorScreen() {
 
       if (userError) throw new Error(`Failed to update user profile: ${userError.message}`);
 
-      // Create creators profile with custom skills
-      const { error: creatorError } = await supabase
+      const creatorPayload = {
+        user_id: user.uid,
+        bio: bio.trim(),
+        skills: selectedSkills.join(', '),
+        portfolio_url: portfolio.trim() || null,
+        experience_years: Number.parseInt(experience, 10) || 0,
+      };
+
+      const { data: existingCreator } = await supabase
         .from('creators')
-        .insert({
-          user_id: user.uid,
-          bio: bio,
-          skills: selectedSkills,
-          custom_skills: customSkills,
-          portfolio_url: portfolio,
-          experience_years: experience,
-          starting_price: minRate,
-          turnaround_time: turnaround
-        });
+        .select('id')
+        .eq('user_id', user.uid)
+        .maybeSingle();
+
+      const { error: creatorError } = existingCreator?.id
+        ? await supabase
+          .from('creators')
+          .update(creatorPayload)
+          .eq('id', existingCreator.id)
+        : await supabase
+          .from('creators')
+          .insert(creatorPayload);
 
       if (creatorError) throw new Error(`Failed to create creator profile: ${creatorError.message}`);
+
+      auth.currentUser.role = 'creator';
+      auth.currentUser.displayName = fullName;
+      auth.currentUser.full_name = fullName;
+      await setStoredUser({
+        firebase_uid: user.uid,
+        id: user.uid,
+        email: user.email,
+        role: 'creator',
+        full_name: fullName,
+        username: fullName,
+      });
 
       showAlert(
         'success',

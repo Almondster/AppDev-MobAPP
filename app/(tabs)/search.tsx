@@ -23,6 +23,14 @@ import { Shadows } from '@/constants/theme';
 const CARD_GAP = 12;
 const HORIZONTAL_PADDING = 24;
 
+const toSkillList = (skills: unknown) => {
+  if (Array.isArray(skills)) return skills.filter(Boolean).map(String);
+  if (typeof skills === 'string') {
+    return skills.split(',').map((skill) => skill.trim()).filter(Boolean);
+  }
+  return [];
+};
+
 export default function SearchScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
@@ -67,11 +75,48 @@ export default function SearchScreen() {
         }
 
       } else {
-        // 2. Fetch Creators
-        let query = supabase.from('users').select('*').eq('role', 'creator');
-        if (searchQuery) query = query.ilike('full_name', `%${searchQuery}%`);
-        const { data } = await query;
-        if (data) setCreators(data);
+        const { data: creatorRows, error } = await supabase
+          .from('creators')
+          .select('*');
+
+        if (error) throw error;
+
+        const creatorIds = (creatorRows || []).map((creator: any) => creator.user_id);
+        const [{ data: reviewsData }, { data: servicesData }] = await Promise.all([
+          supabase.from('reviews').select('reviewee_id, rating').in('reviewee_id', creatorIds),
+          supabase.from('services').select('creator_id, image_url').in('creator_id', creatorIds),
+        ]);
+
+        const formattedCreators = (creatorRows || [])
+          .map((creator: any) => {
+            const user = creator.user || creator.users || {};
+            const skills = toSkillList(creator.skills);
+            const creatorReviews = reviewsData?.filter((review: any) => String(review.reviewee_id) === String(creator.user_id)) || [];
+            const averageRating = creatorReviews.length > 0
+              ? creatorReviews.reduce((total: number, review: any) => total + Number(review.rating || 0), 0) / creatorReviews.length
+              : 0;
+            const serviceCover = servicesData?.find((service: any) => String(service.creator_id) === String(creator.user_id) && service.image_url)?.image_url;
+
+            return {
+              id: creator.id,
+              firebase_uid: String(creator.user_id),
+              full_name: user.full_name || user.username || 'Creator',
+              avatar_url: user.avatar_url || serviceCover || null,
+              primaryTitle: skills[0] || 'Professional Creator',
+              allSkills: skills,
+              rating: creatorReviews.length > 0 ? averageRating.toFixed(1) : 'New',
+              reviewCount: creatorReviews.length,
+            };
+          })
+          .filter((creator: any) => {
+            if (!searchQuery.trim()) return true;
+            const query = searchQuery.toLowerCase();
+            return creator.full_name.toLowerCase().includes(query)
+              || creator.primaryTitle.toLowerCase().includes(query)
+              || creator.allSkills.some((skill: string) => skill.toLowerCase().includes(query));
+          });
+
+        setCreators(formattedCreators);
       }
     } catch (err) {
       console.log(err);
@@ -239,7 +284,7 @@ export default function SearchScreen() {
                     {creator.full_name}
                   </Text>
                   <Text style={[styles.cardSubtitle, { color: theme.tint }]} numberOfLines={1}>
-                    {t('creatorRole')}
+                    {creator.primaryTitle || t('creatorRole')}
                   </Text>
                 </Pressable>
               ))

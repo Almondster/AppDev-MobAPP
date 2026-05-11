@@ -1,9 +1,7 @@
 import SmartMatchProgressHeader from "@/components/SmartMatchProgressHeader";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
-import { auth } from "@/frontend/session";
-import { rankCreatorsForProject } from "@/frontend/matching";
-import { supabase } from "@/frontend/store";
+import { runSmartMatch } from "@/frontend/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -24,7 +22,6 @@ export default function SmartMatchLoading() {
   const { theme, isDark } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const user = auth.currentUser;
   const { t } = useLanguage(); // Use translation hook
 
   // State
@@ -34,17 +31,6 @@ export default function SmartMatchLoading() {
   // Parse Params
   const { category, skills, description, budget, timeline } = params;
   const parsedSkills = typeof skills === 'string' ? JSON.parse(skills) : [];
-
-  const rankCreatorsWithAI = async (
-    creators: any[],
-    category: string,
-    skills: string[],
-    description: string,
-    budget: string,
-    timeline: string
-  ) => {
-    return rankCreatorsForProject(creators, category, skills, description, budget, timeline);
-  };
 
   const themeStyles = {
     container: { backgroundColor: theme.background },
@@ -69,86 +55,17 @@ export default function SmartMatchLoading() {
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        // 0. Get Blocked Users List First
-        let blockedUserIds: string[] = [];
-        if (user) {
-          const { data: blocks } = await supabase
-            .from('blocks')
-            .select('blocked_id')
-            .eq('blocker_id', user.uid);
+        const projectDescription = String(description || '').trim();
+        const smartMatchResponse = await runSmartMatch({
+          query: projectDescription || [category, ...parsedSkills].filter(Boolean).join(' '),
+          category: String(category || ''),
+          skills: parsedSkills,
+          budget: String(budget || ''),
+          timeline: String(timeline || ''),
+          limit: 5,
+        });
 
-          if (blocks) {
-            blockedUserIds = blocks.map(b => b.blocked_id);
-          }
-        }
-
-        // 1. Query ALL Creators (we'll use AI to rank them)
-        let query = supabase
-          .from('creators')
-          .select(`
-            id,
-            bio,
-            skills,
-            experience_years,
-            starting_price,
-            turnaround_time,
-            portfolio_url,
-            user_id,
-            users!inner (
-              firebase_uid,
-              full_name,
-              avatar_url,
-              role
-            )
-          `);
-
-        // EXCLUDE BLOCKED USERS from the query
-        if (blockedUserIds.length > 0) {
-          const idsString = `(${blockedUserIds.map(id => `"${id}"`).join(',')})`;
-          query = query.not('user_id', 'in', idsString);
-        }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        // 2. AI-Powered Ranking with Gemini
-        if (data && data.length > 0) {
-          const safeData = data.filter((c: any) => !blockedUserIds.includes(c.user_id));
-
-          // Use Gemini AI to intelligently rank creators
-          const rankedData = await rankCreatorsWithAI(
-            safeData,
-            String(category),
-            parsedSkills,
-            String(description || ''),
-            String(budget || ''),
-            String(timeline || '')
-          );
-
-          // Filter out low-quality matches - only show creators with 40%+ match
-          // This ensures reasonably relevant matches are displayed (strict enough to filter spam/jokes)
-          const filteredResults = rankedData.filter((creator: any) => creator.matchScore >= 40);
-
-          console.log(`Showing ${filteredResults.length} of ${rankedData.length} creators (filtered out ${rankedData.length - filteredResults.length} low matches)`);
-          setResults(filteredResults);
-
-          // 3. SAVE MATCHES TO DATABASE (For "Recently Matched" history)
-          if (user && filteredResults.length > 0) {
-            // Prepare top 5 matches for insertion
-            const matchesToSave = filteredResults.slice(0, 5).map((item: any) => ({
-              client_id: user.uid,
-              creator_id: item.users.firebase_uid,
-              match_score: item.matchScore
-            }));
-
-            // Insert into 'matches' table
-            // Note: We don't await this blocking the UI, let it happen in background
-            supabase.from('matches').insert(matchesToSave).then(({ error: matchError }) => {
-              if (matchError) console.error("Error saving matches:", matchError);
-            });
-          }
-        }
+        setResults(smartMatchResponse?.results || []);
 
         // Fake delay for "AI" effect
         setTimeout(() => setLoading(false), 2000);
@@ -159,7 +76,7 @@ export default function SmartMatchLoading() {
       }
     };
 
-    if (parsedSkills.length > 0) {
+    if (parsedSkills.length > 0 || description) {
       fetchMatches();
     } else {
       setLoading(false);

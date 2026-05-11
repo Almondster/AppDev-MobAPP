@@ -408,6 +408,12 @@ export const createReport = (body: Record<string, any>) => request('/reports/', 
 export const fetchMatches = (params?: Record<string, any>) => request('/matches/', { params });
 export const createMatch = (body: Record<string, any>) => request('/matches/', { method: 'POST', body });
 export const updateMatch = (id: string | number, body: Record<string, any>) => request(`/matches/${id}/`, { method: 'PUT', body });
+export const runSmartMatch = (body: Record<string, any>) => request('/smart-match/', {
+  method: 'POST',
+  body,
+  skipCache: true,
+  timeout: 60_000,
+});
 
 // ── Payment Methods ────────────────────────────────────────────────────────
 

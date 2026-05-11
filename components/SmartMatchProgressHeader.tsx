@@ -34,8 +34,28 @@ export default function SmartMatchProgressHeader({
     router.push(stepRoutes[step]);
   };
 
+  const closeSmartMatch = () => {
+    router.replace("/(tabs)");
+  };
+
   return (
     <View style={[styles.header, { backgroundColor: theme.card }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close AI Smart Match"
+        onPress={closeSmartMatch}
+        style={({ pressed }) => [
+          styles.closeButton,
+          {
+            backgroundColor: isDark ? "#1f2937" : "#f3f4f6",
+            borderColor: theme.cardBorder,
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Ionicons name="close" size={22} color={theme.text} />
+      </Pressable>
+
       <View style={styles.headerAI}>
         <Ionicons name="sparkles-outline" size={26} color={theme.tint} />
         <Text style={[styles.title, { color: theme.text }]}>AI Smart Match</Text>
@@ -115,6 +135,19 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 54,
+    right: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2,
   },
   headerAI: {
     flexDirection: "row",

@@ -35,6 +35,38 @@ const getCategoryInfo = (subcategory: string): { label: string; icon: string } =
   return { label: 'Other', icon: 'folder-outline' }; // Fallback if not found
 };
 
+const SUBCATEGORY_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+  'Logo Design': 'shapes-outline',
+  'Brand Style Guides': 'book-outline',
+  'Illustration': 'brush-outline',
+  'UI/UX Design': 'layers-outline',
+  'Portrait Drawing': 'person-outline',
+  'Web Development': 'globe-outline',
+  'Mobile App Development': 'phone-portrait-outline',
+  'Game Development': 'game-controller-outline',
+  'Support & IT': 'hardware-chip-outline',
+  'Articles & Blog Posts': 'newspaper-outline',
+  'Translation': 'language-outline',
+  'Proofreading': 'checkmark-done-circle-outline',
+  'Scriptwriting': 'document-text-outline',
+  'Social Media Marketing': 'share-social-outline',
+  'SEO': 'search-outline',
+  'Content Marketing': 'megaphone-outline',
+  'Video Marketing': 'play-circle-outline',
+  'Video Editing': 'cut-outline',
+  'Animation for Kids': 'happy-outline',
+  '3D Product Animation': 'cube-outline',
+  'Visual Effects': 'flash-outline',
+  'Voice Over': 'mic-outline',
+  'Mixing & Mastering': 'options-outline',
+  'Producers & Composers': 'musical-notes-outline',
+  'Singers & Vocalists': 'people-outline',
+};
+
+const getSubcategoryIcon = (subcategory: string): keyof typeof Ionicons.glyphMap => {
+  return SUBCATEGORY_ICON_MAP[subcategory] || 'grid-outline';
+};
+
 interface ServiceCardProps {
   service: {
     id: string;
@@ -54,6 +86,7 @@ interface ServiceCardProps {
 export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onPress }) => {
   const { theme } = useTheme();
   const categoryInfo = getCategoryInfo(service.label);
+  const subcategoryIcon = getSubcategoryIcon(service.label);
 
   return (
     <Pressable
@@ -78,7 +111,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onPress }) =>
         )}
         
         <View style={styles.categoryChip}>
-          <Text style={styles.categoryChipText}>{service.label}</Text>
+          <Ionicons name={subcategoryIcon} size={11} color="#fff" />
+          <Text style={styles.categoryChipText} numberOfLines={1}>{service.label}</Text>
         </View>
       </View>
 
@@ -145,12 +179,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    maxWidth: 244,
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  categoryChipText: { color: '#fff', fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+  categoryChipText: { color: '#fff', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', flexShrink: 1 },
   serviceContent: { padding: 12 },
   serviceTitle: {
     fontSize: 15,

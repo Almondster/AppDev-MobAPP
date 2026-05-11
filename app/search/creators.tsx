@@ -18,6 +18,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Shadows } from '@/constants/theme';
 
+const toSkillList = (skills: unknown) => {
+  if (Array.isArray(skills)) return skills.filter(Boolean).map(String);
+  if (typeof skills === 'string') {
+    return skills.split(',').map((skill) => skill.trim()).filter(Boolean);
+  }
+  return [];
+};
+
 // --- SKELETON LOADER COMPONENT ---
 const SkeletonCreatorItem = () => {
   const { theme } = useTheme();
@@ -75,52 +83,42 @@ export default function AllCreatorsScreen() {
 
   const fetchCreators = async () => {
     try {
-      // 1. Fetch Creators with Profile Info
-      const { data: usersData, error } = await supabase
-        .from('users')
-        .select(`
-          firebase_uid,
-          full_name,
-          avatar_url,
-          role,
-          creators (
-            id,
-            skills,
-            experience_years,
-            bio
-          )
-        `)
-        .eq('role', 'creator');
+      const { data: creatorRows, error } = await supabase
+        .from('creators')
+        .select('*');
 
       if (error) throw error;
 
-      if (!usersData || usersData.length === 0) {
+      if (!creatorRows || creatorRows.length === 0) {
+        setCreators([]);
+        setFilteredCreators([]);
         setLoading(false);
         return;
       }
 
-      // 2. Fetch Reviews to Calculate Ratings
-      const creatorIds = usersData.map(u => u.firebase_uid);
-      const { data: reviewsData } = await supabase
-        .from('reviews')
-        .select('reviewee_id, rating')
-        .in('reviewee_id', creatorIds);
+      const creatorIds = creatorRows.map((creator: any) => creator.user_id);
+      const [{ data: reviewsData }, { data: servicesData }] = await Promise.all([
+        supabase.from('reviews').select('reviewee_id, rating').in('reviewee_id', creatorIds),
+        supabase.from('services').select('creator_id, image_url').in('creator_id', creatorIds),
+      ]);
 
-      // 3. Merge Data & Calculate Ratings
-      const formattedCreators = usersData.map((user: any) => {
-        const userReviews = reviewsData?.filter(r => r.reviewee_id === user.firebase_uid) || [];
+      const formattedCreators = creatorRows.map((creator: any) => {
+        const user = creator.user || creator.users || {};
+        const userReviews = reviewsData?.filter((review: any) => String(review.reviewee_id) === String(creator.user_id)) || [];
         const totalRating = userReviews.reduce((acc, curr) => acc + curr.rating, 0);
         const avgRating = userReviews.length > 0 ? (totalRating / userReviews.length).toFixed(1) : 'New';
+        const skills = toSkillList(creator.skills);
+        const serviceCover = servicesData?.find((service: any) => String(service.creator_id) === String(creator.user_id) && service.image_url)?.image_url;
 
-        // Get skills from the joined creators table (it returns an array of objects, we take the first one)
-        const creatorProfile = user.creators?.[0] || {};
-        const skills = creatorProfile.skills || [];
-        // Use the first skill as a "Title" or fallback to "Creator"
         const primaryTitle = skills.length > 0 ? skills[0] : 'Professional Creator';
 
         return {
-          ...user,
-          ...creatorProfile,
+          id: creator.id,
+          firebase_uid: String(creator.user_id),
+          full_name: user.full_name || user.username || 'Creator',
+          avatar_url: user.avatar_url || serviceCover || null,
+          bio: creator.bio,
+          experience_years: creator.experience_years,
           rating: avgRating,
           reviewCount: userReviews.length,
           primaryTitle,

@@ -297,7 +297,7 @@ const translations = {
 
     // --- SMART MATCH LOADING ---
     aiAnalyzingTitle: 'AI Analyzing Your Project',
-    aiAnalyzingDesc: 'Gemini is evaluating creator portfolios, experience, and track records to find your perfect match...',
+    aiAnalyzingDesc: 'Our matching model is evaluating creator portfolios, experience, and services to find your perfect match...',
     stepAnalyzing: 'Analyzing project requirements',
     stepEvaluating: 'Evaluating creator portfolios',
     stepCalculating: 'Calculating compatibility scores',
@@ -611,7 +611,7 @@ const translations = {
 
     // --- SMART MATCH LOADING ---
     aiAnalyzingTitle: 'Sinusuri ng AI ang Proyekto',
-    aiAnalyzingDesc: 'Sinusuri ng Gemini ang mga portfolio at karanasan upang mahanap ang tamang kapareha...',
+    aiAnalyzingDesc: 'Sinusuri ng matching model ang mga portfolio, karanasan, at serbisyo upang mahanap ang tamang kapareha...',
     stepAnalyzing: 'Sinusuri ang mga kailangan sa proyekto',
     stepEvaluating: 'Tinitignan ang mga portfolio',
     stepCalculating: 'Kinakalkula ang compatibility scores',

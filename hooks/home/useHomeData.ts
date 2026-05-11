@@ -1,5 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useState } from 'react';
+import { fetchServices, fetchUsers } from '../../frontend/api';
 import { auth } from '../../frontend/session';
 import { supabase } from '../../frontend/store';
 
@@ -181,43 +182,49 @@ export const useHomeData = () => {
              }
           }
 
-          const { data: servicesData } = await supabase
-            .from('services')
-            .select(`
-              id,
-              title,
-              description,
-              price,
-              image_url,
-              creator_id,
-              label,
-              created_at,
-              users!services_creator_id_fkey (
-                firebase_uid,
-                full_name,
-                avatar_url,
-                role
-              )
-            `)
-            .not('creator_id', 'is', null)
-            .or('is_deleted.is.null,is_deleted.eq.false')
-            .or('is_public.is.null,is_public.eq.true')
-            .order('created_at', { ascending: false })
-            .limit(10);
+          try {
+            const [servicesResponse, usersResponse] = await Promise.all([
+              fetchServices(),
+              fetchUsers(),
+            ]);
 
-          if (servicesData) {
-            const formattedServices = servicesData.map(service => ({
-              id: service.id,
-              title: service.title,
-              description: service.description,
-              price: service.price,
-              image_url: service.image_url,
-              label: service.label,
-              creator: service.users,
-              creator_id: service.creator_id,
-              created_at: service.created_at
-            }));
+            const servicesRows = servicesResponse?.results || servicesResponse || [];
+            const usersRows = usersResponse?.results || usersResponse || [];
+            const usersById = new Map(
+              usersRows.map((row: any) => [
+                String(row.id || row.firebase_uid),
+                {
+                  ...row,
+                  firebase_uid: String(row.firebase_uid || row.id),
+                  full_name: row.full_name || row.username || row.email?.split('@')[0] || 'Creator',
+                },
+              ])
+            );
+
+            const formattedServices = servicesRows
+              .filter((service: any) => service.creator_id != null)
+              .filter((service: any) => service.is_public !== false)
+              .sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+              .slice(0, 10)
+              .map((service: any) => {
+                const creatorId = String(service.creator_id);
+                return {
+                  id: String(service.id),
+                  title: service.title,
+                  description: service.description,
+                  price: service.price == null ? 'Negotiable' : String(service.price),
+                  image_url: service.image_url,
+                  label: service.label || service.category || 'General',
+                  creator: usersById.get(creatorId) || null,
+                  creator_id: creatorId,
+                  created_at: service.created_at,
+                };
+              });
+
             setCreatorServices(formattedServices);
+          } catch (servicesError) {
+            console.error('Error fetching creator services from backend:', servicesError);
+            setCreatorServices([]);
           }
 
         } catch (err: any) {
