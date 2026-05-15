@@ -1,11 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { Shadows } from '../../constants/theme';
+import { fetchAdminStats } from '@/frontend/api';
 
 export default function AdminDashboardScreen() {
   const { theme } = useTheme();
+  const [liveStats, setLiveStats] = useState<any>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchAdminStats()
+      .then((data) => {
+        if (mounted) setLiveStats(data || {});
+      })
+      .catch((err) => console.error('Failed to load admin stats:', err));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const stats = {
     totalUsers: '1,245',
@@ -42,7 +56,9 @@ export default function AdminDashboardScreen() {
           </View>
           <View style={styles.statContent}>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>TOTAL USERS</Text>
-            <Text style={[styles.statValue, { color: theme.text }]}>{stats.totalUsers}</Text>
+            <Text style={[styles.statValue, { color: theme.text }]}>
+              {liveStats ? Number(liveStats.total_users || 0).toLocaleString() : stats.totalUsers}
+            </Text>
           </View>
         </View>
 
@@ -52,7 +68,9 @@ export default function AdminDashboardScreen() {
           </View>
           <View style={styles.statContent}>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>REVENUE</Text>
-            <Text style={[styles.statValue, { color: theme.text }]}>{stats.platformRevenue}</Text>
+            <Text style={[styles.statValue, { color: theme.text }]}>
+              {liveStats ? `₱${Number(liveStats.total_revenue || 0).toLocaleString()}` : stats.platformRevenue}
+            </Text>
           </View>
         </View>
       </View>
@@ -64,7 +82,9 @@ export default function AdminDashboardScreen() {
         </View>
         <View style={styles.statContentDouble}>
           <Text style={[styles.statLabel, { color: theme.textSecondary }]}>ACTIVE DISPUTES</Text>
-          <Text style={[styles.statValue, { color: '#f87171' }]}>{stats.activeDisputes}</Text>
+          <Text style={[styles.statValue, { color: '#f87171' }]}>
+            {liveStats ? Number(liveStats.disputed_orders || 0).toLocaleString() : stats.activeDisputes}
+          </Text>
         </View>
         <Pressable style={[styles.viewBtn, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
           <Text style={styles.viewBtnText}>View</Text>
@@ -77,6 +97,30 @@ export default function AdminDashboardScreen() {
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Platform Activity</Text>
         
         <View style={styles.alertsList}>
+          {(liveStats?.recent_orders || []).slice(0, 5).map((order: any) => (
+            <View key={order.id} style={[styles.alertItem, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <View style={styles.alertHeaderRow}>
+                <View style={[styles.smallIconCircle, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
+                  <Ionicons name="briefcase" size={16} color="#3b82f6" />
+                </View>
+                <View style={styles.alertTextContent}>
+                  <Text style={[styles.alertTitle, { color: theme.text }]}>Order #{order.id}: {order.service_title}</Text>
+                  <Text style={[styles.alertDesc, { color: theme.textSecondary }]}>
+                    {order.client_name || 'Client'} → {order.creator_name || 'Creator'} · {String(order.status || 'pending').replace(/_/g, ' ')}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.alertTimeRow}>
+                <Ionicons name="time-outline" size={13} color={theme.textSecondary} />
+                <Text style={[styles.alertTime, { color: theme.textSecondary }]}>
+                  {order.created_at ? new Date(order.created_at).toLocaleString() : 'Recent'}
+                </Text>
+              </View>
+            </View>
+          ))}
+
+          {!liveStats && (
+          <>
           {/* Actionable Dispute Alert */}
           <View style={[styles.alertItem, { backgroundColor: 'rgba(239, 68, 68, 0.04)', borderColor: 'rgba(239, 68, 68, 0.15)' }]}>
             <View style={styles.alertHeaderRow}>
@@ -127,6 +171,8 @@ export default function AdminDashboardScreen() {
               <Text style={[styles.alertTime, { color: theme.textSecondary }]}>3hr ago</Text>
             </View>
           </View>
+          </>
+          )}
         </View>
       </View>
       

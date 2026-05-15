@@ -21,12 +21,14 @@ const TABLE_FETCH_MAP: Record<string, (params?: Record<string, any>) => Promise<
   follows: api.fetchFollows,
   blocks: api.fetchBlocks,
   reports: api.fetchReports,
+  disputes: api.fetchDisputes,
   matches: api.fetchMatches,
   'payment_methods': api.fetchPaymentMethods,
   'support_tickets': api.fetchSupportTickets,
   'user_wallets': api.fetchWallets,
   withdrawals: api.fetchWithdrawals,
   'order_timeline': api.fetchOrderTimeline,
+  'order_notifications': api.fetchOrderNotifications,
   'deadline_notifications': api.fetchDeadlineNotifications,
   'daily_analytics': api.fetchDailyAnalytics,
 };
@@ -39,6 +41,7 @@ const TABLE_CREATE_MAP: Record<string, (body: Record<string, any>) => Promise<an
   follows: api.createFollow,
   blocks: api.createBlock,
   reports: api.createReport,
+  disputes: api.createDispute,
   matches: api.createMatch,
   'payment_methods': api.createPaymentMethod,
   'support_tickets': api.createSupportTicket,
@@ -53,6 +56,8 @@ const TABLE_UPDATE_MAP: Record<string, (id: string | number, body: Record<string
   orders: api.updateOrder,
   reviews: api.updateReview,
   messages: api.updateMessage,
+  reports: api.updateReport,
+  disputes: api.resolveDispute,
   matches: api.updateMatch,
   'support_tickets': api.updateSupportTicket,
   'user_wallets': api.updateWallet,
@@ -60,8 +65,10 @@ const TABLE_UPDATE_MAP: Record<string, (id: string | number, body: Record<string
 
 const TABLE_DELETE_MAP: Record<string, (id: string | number) => Promise<any>> = {
   services: api.deleteService,
+  orders: api.deleteOrder,
   follows: api.deleteFollow,
   blocks: api.deleteBlock,
+  disputes: api.deleteDispute,
   'payment_methods': api.deletePaymentMethod,
   'user_wallets': api.deleteWallet,
 };
@@ -173,6 +180,15 @@ const normalizeRow = (table: string, row: Record<string, any>) => {
       ...row,
       client_id: idString(row.client_id),
       creator_id: idString(row.creator_id),
+    };
+  }
+
+  if (table === 'disputes') {
+    return {
+      ...row,
+      order_id: idString(row.order_id),
+      raised_by: idString(row.raised_by),
+      resolved_by: idString(row.resolved_by),
     };
   }
 

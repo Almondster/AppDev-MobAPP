@@ -63,19 +63,6 @@ export default function LoginScreen() {
     setAlertModalVisible(true);
   };
 
-  // --- HELPER: VERIFICATION CHECK (ONLY FOR EMAIL AUTH) ---
-  const checkVerification = async (user: any) => {
-    if (user && !user.emailVerified) {
-      await signOut(auth);
-      Alert.alert(
-        'Verification Required',
-        'Please verify your email address before logging in. Check your inbox or spam folder for the verification link.',
-      );
-      return false;
-    }
-    return true;
-  };
-
   const handleSocialLogin = async (provider: 'google' | 'github') => {
     try {
       setLoading(true);
@@ -125,14 +112,7 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-      // --- SECURITY CHECK ---
-      const isVerified = await checkVerification(userCredential.user);
-      if (!isVerified) {
-        setLoading(false);
-        return;
-      }
+      await signInWithEmailAndPassword(auth, email, password);
 
     } catch (error: any) {
       let errorMessage = 'Unable to sign in securely. Please try again.';
@@ -352,36 +332,6 @@ export default function LoginScreen() {
                 disabled={loading}>
                 <AntDesign name="github" size={18} color={theme.text} />
                 <Text style={[styles.socialLabel, themeStyles.text]}>GitHub</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.dividerRow}>
-              <View style={[styles.divider, themeStyles.divider]} />
-              <Text style={[styles.dividerText, themeStyles.subText]}>Demo Accounts (Press & Login)</Text>
-              <View style={[styles.divider, themeStyles.divider]} />
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 8 }}>
-               <Pressable
-                style={[styles.socialButton, themeStyles.socialButton, { marginHorizontal: 0 }]}
-                onPress={() => { setEmail('alex@createch.app'); setPassword('password'); }}
-                disabled={loading}>
-                <Ionicons name="person" size={16} color={theme.text} />
-                <Text style={[styles.socialLabel, themeStyles.text, { fontSize: 13, marginLeft: 4 }]}>Client</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.socialButton, themeStyles.socialButton, { marginHorizontal: 0 }]}
-                onPress={() => { setEmail('maya@createch.app'); setPassword('password'); }}
-                disabled={loading}>
-                <Ionicons name="brush" size={16} color={theme.text} />
-                <Text style={[styles.socialLabel, themeStyles.text, { fontSize: 13, marginLeft: 4 }]}>Creator</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.socialButton, themeStyles.socialButton, { marginHorizontal: 0 }]}
-                onPress={() => { setEmail('admin@createch.app'); setPassword('password'); }}
-                disabled={loading}>
-                <Ionicons name="shield-checkmark" size={16} color={theme.text} />
-                <Text style={[styles.socialLabel, themeStyles.text, { fontSize: 13, marginLeft: 4 }]}>Admin</Text>
               </Pressable>
             </View>
 

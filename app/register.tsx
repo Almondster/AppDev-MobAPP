@@ -1,15 +1,12 @@
 import { useTheme } from '@/context/ThemeContext';
 import { Shadows } from '@/constants/theme';
-import { supabase } from '@/frontend/store';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import {
   auth,
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   signOut,
-  updateProfile
 } from '@/frontend/session';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -357,85 +354,48 @@ export default function RegisterScreen() {
       return;
     }
 
-    try {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      // Clean phone number for storage
-      const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
-      const fullPhoneNumber = `${selectedCountry.dialCode}${cleanPhone}`;
-
-      // Calculate Age
-      const age = birthDate ? calculateAge(birthDate) : '';
-
-      // 1. Create User in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
-
-      const user = userCredential.user;
-
-      // Construct full name from separate fields
-      const fullName = `${firstName.trim()} ${middleName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim();
-
-      // 2. Update Firebase Profile Name
-      await updateProfile(user, {
-        displayName: fullName,
-      });
-
-      // 3. Create User in Supabase
-      // Added missing fields: age, nationality, and corrected phone storage
-      const { error: supabaseError } = await supabase
-        .from('users')
-        .insert({
-          firebase_uid: user.uid,
-          email: email.trim(),
-          first_name: firstName.trim(),
-          middle_name: middleName.trim(),
-          last_name: lastName.trim(),
-          full_name: fullName,
-          phone: fullPhoneNumber, // Storing complete international number
-          birthdate: birthDate ? birthDate.toLocaleDateString('en-GB') : '',
-          age: age, // Populating age column
-          nationality: selectedCountry.name, // Populating nationality column
-          role: 'client',
-          created_at: new Date().toISOString(),
-        });
-
-      if (supabaseError) {
-        console.error('Supabase insert error:', supabaseError);
-        throw new Error(`Failed to create user profile: ${supabaseError.message}`);
-      }
-
-      // 4. Send Verification Email
-      await sendEmailVerification(user);
-
-      // 5. Sign Out Immediately (Prevent Auto-Login)
-      await signOut(auth);
-
-      Alert.alert(
-        'Verification Sent',
-        `We've sent a verification link to ${email}. Please check your inbox or spam folder and verify your account before logging in.`,
-        [
+        // Clean phone number for storage
+        const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+        const fullPhoneNumber = `${selectedCountry.dialCode}${cleanPhone}`;
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password,
           {
-            text: 'Ok',
-            onPress: () => { }
+            first_name: firstName.trim(),
+            last_name: `${middleName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim(),
+            phone: fullPhoneNumber,
+            role: 'client',
           }
-        ]
-      );
+        );
+        const user = userCredential.user;
+        await signOut(auth);
 
-    } catch (error: any) {
+        Alert.alert(
+          'Account Created',
+          `Your account for ${email} was created successfully. You can sign in now.`,
+          [
+            {
+              text: 'Ok',
+              onPress: () => router.replace('/login')
+            }
+          ]
+        );
+
+      } catch (error: any) {
       let errorMessage = 'Unable to create account. Please try again.';
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email is already registered. Please sign in instead.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'The email address is not valid.';
-      } else if (error.message?.includes('Supabase')) {
-        errorMessage = error.message;
-      }
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'This email is already registered. Please sign in instead.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'Password is too weak.';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'The email address is not valid.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
       setRegistrationErrorMessage(errorMessage);
       setShowRegistrationErrorModal(true);
     } finally {

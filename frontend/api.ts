@@ -276,8 +276,61 @@ export async function registerAPI(payload: {
   return data;
 }
 
+export async function forgotPasswordAPI(email: string) {
+  return request('/auth/forgot-password/', {
+    method: 'POST',
+    body: { email },
+    auth: false,
+  });
+}
+
 export async function fetchMe() {
   return request('/auth/me/', { skipCache: true });
+}
+
+export async function googleLoginAPI(idToken: string, role = 'client') {
+  const data = await request('/auth/google/', {
+    method: 'POST',
+    body: { id_token: idToken, role },
+    auth: false,
+  });
+  await setToken(data.access);
+  await setStoredUser({
+    firebase_uid: data.firebase_uid,
+    id: data.firebase_uid,
+    email: data.email,
+    role: data.role,
+    full_name: data.full_name,
+    username: data.full_name,
+    auth_provider: data.auth_provider || 'google',
+  });
+  clearAllCache();
+  return data;
+}
+
+export const changePassword = (body: Record<string, any>) => request('/auth/change-password/', { method: 'POST', body });
+export const changeEmail = (body: Record<string, any>) => request('/auth/change-email/', { method: 'POST', body });
+
+export async function uploadIdVerificationImage(uri: string, filename: string) {
+  const token = await getToken();
+  const formData = new FormData();
+  formData.append('file', {
+    uri,
+    name: filename,
+    type: 'image/jpeg',
+  } as any);
+
+  const res = await fetch(`${API_BASE}/uploads/id-verification?filename=${encodeURIComponent(filename)}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.detail || `Upload failed (${res.status})`);
+  }
+  return data;
 }
 
 // ── Users ──────────────────────────────────────────────────────────────────
@@ -285,6 +338,8 @@ export async function fetchMe() {
 export const fetchUsers = (params?: Record<string, any>) => request('/users/', { params });
 export const fetchUser = (id: string) => request(`/users/${id}/`);
 export const updateUser = (id: string, body: Record<string, any>) => request(`/users/${id}/`, { method: 'PATCH', body });
+export const suspendUser = (id: string | number) => request(`/users/${id}/suspend/`, { method: 'POST' });
+export const activateUser = (id: string | number) => request(`/users/${id}/activate/`, { method: 'POST' });
 
 // ── Creators ───────────────────────────────────────────────────────────────
 
@@ -331,7 +386,14 @@ export const createOrder = async (body: Record<string, any>) => {
   return request('/orders/', { method: 'POST', body: { service_id: Number(serviceId) } });
 };
 export const updateOrder = (id: string | number, body: Record<string, any>) => request(`/orders/${id}/`, { method: 'PATCH', body });
+export const deleteOrder = (id: string | number) => request(`/orders/${id}/`, { method: 'DELETE' });
 export const updateOrderStatus = (id: string | number, status: string) => request(`/orders/${id}/update_status/`, { method: 'POST', body: { status } });
+export const acceptOrder = (id: string | number) => request(`/orders/${id}/accept/`, { method: 'POST' });
+export const rejectOrder = (id: string | number, reason?: string) => request(`/orders/${id}/reject/`, { method: 'POST', body: { reason } });
+export const payOrder = (id: string | number) => request(`/orders/${id}/pay/`, { method: 'POST' });
+export const submitPartialOutput = (id: string | number, body: Record<string, any>) => request(`/orders/${id}/partial-output/`, { method: 'POST', body });
+export const submitFinalOutput = (id: string | number, body: Record<string, any>) => request(`/orders/${id}/final-output/`, { method: 'POST', body });
+export const refundOrder = (id: string | number, body: Record<string, any>) => request(`/orders/${id}/refund/`, { method: 'POST', body });
 
 // ── Order Timeline ─────────────────────────────────────────────────────────
 
@@ -402,6 +464,7 @@ export const deleteBlock = (id: string | number) => request(`/blocks/${id}/`, { 
 
 export const fetchReports = (params?: Record<string, any>) => request('/reports/', { params });
 export const createReport = (body: Record<string, any>) => request('/reports/', { method: 'POST', body });
+export const updateReport = (id: string | number, body: Record<string, any>) => request(`/reports/${id}/`, { method: 'PATCH', body });
 
 // ── Matches ────────────────────────────────────────────────────────────────
 
@@ -461,3 +524,31 @@ export const fetchDeadlineNotifications = (params?: Record<string, any>) => requ
 // ── Daily Analytics ────────────────────────────────────────────────────────
 
 export const fetchDailyAnalytics = (params?: Record<string, any>) => request('/daily-analytics/', { params });
+
+// Dashboard stats
+export const fetchCreatorStats = () => request('/dashboard/creator-stats', { skipCache: true });
+export const fetchAdminStats = () => request('/dashboard/admin-stats', { skipCache: true });
+
+// Creator applications
+export const submitCreatorApplication = (body: Record<string, any>) =>
+  request('/creator-applications/', { method: 'POST', body, skipCache: true });
+export const fetchCreatorApplications = (params?: Record<string, any>) => request('/creator-applications/', { params });
+export const fetchCreatorApplication = (id: string | number) => request(`/creator-applications/${id}/`);
+export const reviewCreatorApplication = (id: string | number, body: Record<string, any>) =>
+  request(`/creator-applications/${id}/review/`, { method: 'PATCH', body });
+
+// Disputes
+export const fetchDisputes = (params?: Record<string, any>) => request('/disputes/', { params });
+export const fetchDispute = (id: string | number) => request(`/disputes/${id}/`);
+export const createDispute = (body: Record<string, any>) => request('/disputes/', { method: 'POST', body });
+export const resolveDispute = (id: string | number, body: Record<string, any>) => request(`/disputes/${id}/resolve`, { method: 'PATCH', body });
+export const escalateDispute = (id: string | number) => request(`/disputes/${id}/escalate`, { method: 'POST' });
+export const deleteDispute = (id: string | number) => request(`/disputes/${id}/`, { method: 'DELETE' });
+
+// Order notifications
+export const fetchOrderNotifications = (params?: Record<string, any>) => request('/order-notifications/', { params, skipCache: true });
+export const getUnreadNotificationCount = () => request('/order-notifications/unread-count', { skipCache: true });
+export const markNotificationRead = (id: string | number) => request(`/order-notifications/${id}/mark-read`, { method: 'POST' });
+export const markAllNotificationsRead = () => request('/order-notifications/mark-all-read', { method: 'POST' });
+export const deleteNotification = (id: string | number) => request(`/order-notifications/${id}/`, { method: 'DELETE' });
+export const clearAllNotifications = () => request('/order-notifications/clear-all', { method: 'DELETE' });

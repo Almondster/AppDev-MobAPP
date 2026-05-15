@@ -4,27 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Shadows } from '../../constants/theme';
-
-const MOCK_DISPUTES = [
-  {
-    id: 'DSP-8842',
-    status: 'Requires Arbitration',
-    date: 'Oct 24, 2026',
-    price: '45,000',
-    client: 'TechFlow Solutions',
-    creator: 'Alex Rivera',
-    issue: 'Client claims milestones were missed despite creator providing deliverable proof.'
-  },
-  {
-    id: 'DSP-8843',
-    status: 'Pending Evidence',
-    date: 'Oct 25, 2026',
-    price: '12,500',
-    client: 'Digital Studio V',
-    creator: 'Sarah Chen',
-    issue: 'Creator alleges client stopped responding after final files were transferred.'
-  }
-];
+import { escalateDispute, fetchDisputes, fetchOrders, resolveDispute } from '@/frontend/api';
 
 export default function AdminDisputesScreen() {
   const { theme } = useTheme();
@@ -32,8 +12,44 @@ export default function AdminDisputesScreen() {
 
   // Interactivity States
   const [loading, setLoading] = useState(true);
+  const [disputes, setDisputes] = useState<any[]>([]);
   const [selectedDispute, setSelectedDispute] = useState<any>(null);
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  const loadDisputes = async () => {
+    setLoading(true);
+    try {
+      const [disputeRes, orderRes] = await Promise.all([
+        fetchDisputes(),
+        fetchOrders().catch(() => []),
+      ]);
+      const rows = disputeRes?.results || disputeRes || [];
+      const orders = orderRes?.results || orderRes || [];
+      const ordersById = new Map<string, any>(orders.map((order: any) => [String(order.id), order]));
+
+      setDisputes(rows.map((row: any) => {
+        const order = ordersById.get(String(row.order_id)) || {};
+        return {
+          raw: row,
+          id: row.id,
+          displayId: `DSP-${row.id}`,
+          orderId: row.order_id,
+          status: String(row.status || 'open').replace(/_/g, ' ').toUpperCase(),
+          date: row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Unknown',
+          price: Number(order.price || row.refund_amount || 0).toLocaleString(),
+          client: order.client_name || `Client #${order.client_id || '-'}`,
+          creator: order.creator_name || `Creator #${order.creator_id || '-'}`,
+          issue: row.reason || row.dispute_type || 'No reason provided',
+          disputeType: String(row.dispute_type || 'other').replace(/_/g, ' '),
+        };
+      }));
+    } catch (err) {
+      console.error('Failed to load disputes:', err);
+      setDisputes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     Animated.loop(
@@ -43,9 +59,7 @@ export default function AdminDisputesScreen() {
       ])
     ).start();
 
-    // Simulate network latency
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    loadDisputes();
   }, [pulseAnim]);
 
   return (
@@ -56,7 +70,7 @@ export default function AdminDisputesScreen() {
         <View style={[styles.mainHeaderContent, { paddingTop: Math.max(insets.top + 16, 60) }]}>
           <Text style={[styles.screenTitle, { color: theme.text }]}>Active Disputes</Text>
           <View style={[styles.disputeCountBadge, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
-            <Text style={styles.disputeCountText}>{MOCK_DISPUTES.length}</Text>
+            <Text style={styles.disputeCountText}>{disputes.length}</Text>
           </View>
         </View>
       </View>
@@ -79,7 +93,7 @@ export default function AdminDisputesScreen() {
             </Animated.View>
           ))
         ) : (
-          MOCK_DISPUTES.map((dispute) => {
+          disputes.map((dispute) => {
             return (
               <Pressable
                 key={dispute.id}
@@ -94,7 +108,7 @@ export default function AdminDisputesScreen() {
                 {/* Card Header */}
                 <View style={styles.cardHeader}>
                   <View style={styles.cardHeaderLeft}>
-                    <Text style={[styles.disputeId, { color: theme.text }]}>{dispute.id}</Text>
+                    <Text style={[styles.disputeId, { color: theme.text }]}>{dispute.displayId}</Text>
                     <View style={styles.badge}>
                       <Text style={styles.badgeText}>{dispute.status}</Text>
                     </View>
@@ -145,7 +159,18 @@ export default function AdminDisputesScreen() {
                 <View style={styles.actionsContainer}>
 
                   {/* Primary Action */}
-                  <Pressable style={styles.actionReviewBlock} onPress={(e) => { e.stopPropagation(); alert('Reviewing Evidence'); }}>
+                  <Pressable
+                    style={styles.actionReviewBlock}
+                    onPress={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await escalateDispute(dispute.id);
+                        await loadDisputes();
+                      } catch (err: any) {
+                        alert(err?.message || 'Failed to move dispute under review');
+                      }
+                    }}
+                  >
                     <Ionicons name="scale-outline" size={18} color="#fff" />
                     <Text style={styles.actionReviewText}>Review Evidence</Text>
                   </Pressable>
@@ -157,7 +182,22 @@ export default function AdminDisputesScreen() {
                       <Text style={[styles.actionBtnOutlineText, { color: theme.text }]}>Message</Text>
                     </Pressable>
 
-                    <Pressable style={[styles.actionBtnOutline, { borderColor: 'rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.05)' }]} onPress={(e) => { e.stopPropagation(); alert('Resolve Dispute'); }}>
+                    <Pressable
+                      style={[styles.actionBtnOutline, { borderColor: 'rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.05)' }]}
+                      onPress={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await resolveDispute(dispute.id, {
+                            status: 'resolved',
+                            resolution: 'refund_denied',
+                            admin_notes: 'Resolved from mobile admin panel',
+                          });
+                          await loadDisputes();
+                        } catch (err: any) {
+                          alert(err?.message || 'Failed to resolve dispute');
+                        }
+                      }}
+                    >
                       <Ionicons name="checkmark-circle-outline" size={16} color="#10b981" />
                       <Text style={[styles.actionBtnOutlineText, { color: '#10b981' }]}>Resolve</Text>
                     </Pressable>
@@ -181,7 +221,9 @@ export default function AdminDisputesScreen() {
             </View>
             <Text style={[styles.bottomEscrowLabel, { color: theme.textSecondary }]}>Total Escrow</Text>
           </View>
-          <Text style={[styles.bottomEscrowValue, { color: theme.text }]}>₱57,500</Text>
+          <Text style={[styles.bottomEscrowValue, { color: theme.text }]}>
+            ₱{disputes.reduce((total, dispute) => total + Number(String(dispute.price).replace(/,/g, '') || 0), 0).toLocaleString()}
+          </Text>
         </View>
       </View>
 
@@ -202,7 +244,7 @@ export default function AdminDisputesScreen() {
                 <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
                   <Ionicons name="warning" size={40} color="#ef4444" />
                 </View>
-                <Text style={{ fontSize: 24, fontWeight: '800', color: theme.text }}>{selectedDispute.id}</Text>
+                <Text style={{ fontSize: 24, fontWeight: '800', color: theme.text }}>{selectedDispute.displayId}</Text>
                 <View style={[styles.badge, { backgroundColor: 'rgba(239, 68, 68, 0.1)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 }]}>
                   <Text style={[styles.badgeText, { color: '#ef4444', fontSize: 13 }]}>{selectedDispute.status}</Text>
                 </View>
@@ -259,7 +301,19 @@ export default function AdminDisputesScreen() {
 
                 <Pressable
                   style={({ pressed }) => [styles.actionButton, { backgroundColor: '#10b981' }, pressed && { opacity: 0.8 }]}
-                  onPress={() => alert(`Resolved in favor of the CREATOR. Funds un-frozen.`)}
+                  onPress={async () => {
+                    try {
+                      await resolveDispute(selectedDispute.id, {
+                        status: 'resolved',
+                        resolution: 'refund_denied',
+                        admin_notes: 'Resolved for creator from mobile admin panel',
+                      });
+                      setSelectedDispute(null);
+                      await loadDisputes();
+                    } catch (err: any) {
+                      alert(err?.message || 'Failed to resolve dispute');
+                    }
+                  }}
                 >
                   <Ionicons name="checkmark-done" size={20} color="#fff" />
                   <Text style={styles.actionButtonText}>Resolve for Creator (Release Funds)</Text>
@@ -267,7 +321,19 @@ export default function AdminDisputesScreen() {
 
                 <Pressable
                   style={({ pressed }) => [styles.actionButton, { backgroundColor: '#3b82f6' }, pressed && { opacity: 0.8 }]}
-                  onPress={() => alert(`Resolved in favor of the CLIENT. Escrow refunded.`)}
+                  onPress={async () => {
+                    try {
+                      await resolveDispute(selectedDispute.id, {
+                        status: 'resolved',
+                        resolution: 'refund_approved',
+                        admin_notes: 'Resolved for client from mobile admin panel',
+                      });
+                      setSelectedDispute(null);
+                      await loadDisputes();
+                    } catch (err: any) {
+                      alert(err?.message || 'Failed to resolve dispute');
+                    }
+                  }}
                 >
                   <Ionicons name="arrow-undo" size={20} color="#fff" />
                   <Text style={styles.actionButtonText}>Resolve for Client (Refund Escrow)</Text>

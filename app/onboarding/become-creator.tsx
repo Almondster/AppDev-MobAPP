@@ -1,10 +1,9 @@
 import { CREATOR_TERMS_OF_SERVICE, getFormattedToS } from '@/constants/creatorTermsOfService';
 import { useTheme } from '@/context/ThemeContext';
+import { fetchMe, setStoredUser, submitCreatorApplication, uploadIdVerificationImage } from '@/frontend/api';
 import { auth } from '@/frontend/session';
-import { setStoredUser } from '@/frontend/api';
 import { supabase } from '@/frontend/store';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -406,99 +405,59 @@ export default function BecomeCreatorScreen() {
 
     setLoading(true);
     try {
-      const uploadVerificationImage = async (suffix: string, base64: string | null) => {
-        if (!base64) return null;
-
-        try {
-          const fileName = `${user.uid}/${suffix}_${Date.now()}.jpg`;
-          const { error: uploadError } = await supabase.storage
-            .from('id-verification')
-            .upload(fileName, decode(base64), { contentType: 'image/jpeg', upsert: false });
-
-          if (uploadError) {
-            console.warn(`Skipping ${suffix} upload:`, uploadError.message);
-            return null;
-          }
-
-          const { data: urlData } = supabase.storage.from('id-verification').getPublicUrl(fileName);
-          return urlData.publicUrl;
-        } catch (uploadErr: any) {
-          console.warn(`Skipping ${suffix} upload:`, uploadErr?.message || uploadErr);
-          return null;
-        }
+      const uploadVerificationImage = async (suffix: string, uri: string | null) => {
+        if (!uri) return null;
+        const fileName = `${user.uid}_${suffix}_${Date.now()}.jpg`;
+        const result = await uploadIdVerificationImage(uri, fileName);
+        return result.url;
       };
 
       const [idFrontUrl, idBackUrl, idSelfieUrl] = await Promise.all([
-        uploadVerificationImage('id_front', idFrontBase64),
-        uploadVerificationImage('id_back', idBackBase64),
-        uploadVerificationImage('id_selfie', idSelfieBase64),
+        uploadVerificationImage('id_front', idFrontImage),
+        uploadVerificationImage('id_back', idBackImage),
+        uploadVerificationImage('id_selfie', idSelfieImage),
       ]);
 
       const fullName = `${firstName.trim()} ${middleName.trim()} ${lastName.trim()}`.replace(/\s+/g, ' ').trim();
       const cleanPhone = phone.replace(/[^0-9]/g, '');
       const fullPhone = `${selectedCountry.dialCode}${cleanPhone}`;
 
-      // Update users table with structured address and 3 ID URLs
-      const { error: userError } = await supabase
-        .from('users')
-        .update({
-          username: fullName,
-          first_name: firstName,
-          middle_name: middleName,
-          last_name: lastName,
-          full_name: fullName,
-          phone: fullPhone,
-          street_address: streetAddress,
-          barangay: barangay || null,
-          city: city,
-          province: province || null,
-          postal_code: postalCode || null,
-          country: country,
-          id_number: idNumber,
-          id_front_url: idFrontUrl,
-          id_back_url: idBackUrl,
-          id_selfie_url: idSelfieUrl,
-          role: 'creator'
-        })
-        .eq('firebase_uid', user.uid);
-
-      if (userError) throw new Error(`Failed to update user profile: ${userError.message}`);
-
-      const creatorPayload = {
-        user_id: user.uid,
+      await submitCreatorApplication({
+        first_name: firstName.trim(),
+        middle_name: middleName.trim() || null,
+        last_name: lastName.trim(),
+        phone: fullPhone,
+        id_number: idNumber,
+        id_front_url: idFrontUrl,
+        id_back_url: idBackUrl,
+        id_selfie_url: idSelfieUrl,
+        street_address: streetAddress.trim(),
+        barangay: barangay.trim() || null,
+        city: city.trim(),
+        province: province.trim() || null,
+        postal_code: postalCode.trim() || null,
+        country,
         bio: bio.trim(),
-        skills: selectedSkills.join(', '),
+        experience_years: experience,
+        starting_price: minRate,
+        turnaround_time: turnaround,
+        category: selectedCategory,
+        skills: selectedSkills,
         portfolio_url: portfolio.trim() || null,
-        experience_years: Number.parseInt(experience, 10) || 0,
-      };
+      });
 
-      const { data: existingCreator } = await supabase
-        .from('creators')
-        .select('id')
-        .eq('user_id', user.uid)
-        .maybeSingle();
-
-      const { error: creatorError } = existingCreator?.id
-        ? await supabase
-          .from('creators')
-          .update(creatorPayload)
-          .eq('id', existingCreator.id)
-        : await supabase
-          .from('creators')
-          .insert(creatorPayload);
-
-      if (creatorError) throw new Error(`Failed to create creator profile: ${creatorError.message}`);
+      const updatedUser = await fetchMe();
 
       auth.currentUser.role = 'creator';
       auth.currentUser.displayName = fullName;
       auth.currentUser.full_name = fullName;
       await setStoredUser({
-        firebase_uid: user.uid,
-        id: user.uid,
-        email: user.email,
-        role: 'creator',
-        full_name: fullName,
-        username: fullName,
+        ...updatedUser,
+        firebase_uid: String(updatedUser.firebase_uid || updatedUser.id || user.uid),
+        id: updatedUser.id || user.uid,
+        role: updatedUser.role || 'creator',
+        full_name: updatedUser.full_name || updatedUser.username || fullName,
+        username: updatedUser.username || fullName,
       });
 
       showAlert(

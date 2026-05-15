@@ -4,18 +4,28 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useOrderUpdates } from '@/context/OrderContext';
+import { OrderProvider, useOrderUpdates } from '@/context/OrderContext';
 import { useTheme } from '@/context/ThemeContext';
-import { useUnread } from '@/context/UnreadContext';
+import { UnreadProvider, useUnread } from '@/context/UnreadContext';
 import { auth } from '@/frontend/session';
 import { supabase } from '@/frontend/store';
 import { Shadows } from '@/constants/theme';
 
 export default function TabLayout() {
+  return (
+    <OrderProvider>
+      <UnreadProvider>
+        <TabLayoutInner />
+      </UnreadProvider>
+    </OrderProvider>
+  );
+}
+
+function TabLayoutInner() {
   const { theme } = useTheme();
   const router = useRouter();
-  const [role, setRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(auth.currentUser?.role || null);
+  const [loading, setLoading] = useState(!auth.currentUser?.role);
 
   const { unreadCount, refreshUnreadCount } = useUnread();
   const { unseenOrderCount, markOrdersAsSeen } = useOrderUpdates();
@@ -26,6 +36,10 @@ export default function TabLayout() {
     const fetchRole = async () => {
       const user = auth.currentUser;
       if (user) {
+        if (user.role) {
+          setRole(user.role);
+          setLoading(false);
+        }
         const { data } = await supabase
           .from('users')
           .select('role')

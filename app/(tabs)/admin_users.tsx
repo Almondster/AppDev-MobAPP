@@ -4,14 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Shadows } from '../../constants/theme';
-
-const MOCK_USERS = [
-  { id: '1', name: 'Alex Rivera', role: 'Creator', status: 'Active', joined: 'Jan 12, 2026', reports: 0, avatarColor: '#818cf8' },
-  { id: '2', name: 'TechFlow Solutions', role: 'Client', status: 'Active', joined: 'Feb 03, 2026', reports: 1, avatarColor: '#a78bfa' },
-  { id: '3', name: 'Sarah Chen', role: 'Creator', status: 'Suspended', joined: 'Nov 15, 2025', reports: 4, avatarColor: '#818cf8' },
-  { id: '4', name: 'Mike Johnson', role: 'Client', status: 'Active', joined: 'Mar 22, 2026', reports: 0, avatarColor: '#818cf8' },
-  { id: '5', name: 'Digital Studio V', role: 'Creator', status: 'Warning', joined: 'Dec 05, 2025', reports: 2, avatarColor: '#818cf8' },
-];
+import { activateUser, fetchReports, fetchUsers, suspendUser } from '@/frontend/api';
 
 const FILTERS = ['All', 'Creators', 'Clients', 'Suspended'];
 
@@ -25,8 +18,51 @@ export default function AdminUsersScreen() {
 
   // Interactivity States
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const [usersRes, reportsRes] = await Promise.all([
+        fetchUsers(),
+        fetchReports().catch(() => []),
+      ]);
+      const rows = usersRes?.results || usersRes || [];
+      const reports = reportsRes?.results || reportsRes || [];
+      const reportCounts = new Map<string, number>();
+
+      reports.forEach((report: any) => {
+        const reportedId = String(report.reported_id || report.user_id || '');
+        if (reportedId) reportCounts.set(reportedId, (reportCounts.get(reportedId) || 0) + 1);
+      });
+
+      setUsers(rows.map((row: any) => {
+        const uid = String(row.firebase_uid || row.id);
+        const fullName = row.full_name || row.username || row.email || 'User';
+        const role = String(row.role || 'client').toLowerCase();
+        const status = row.is_active === false ? 'Suspended' : (reportCounts.get(uid) || 0) >= 3 ? 'Warning' : 'Active';
+
+        return {
+          raw: row,
+          id: row.id ?? uid,
+          uid,
+          name: fullName,
+          role: role === 'admin' ? 'Admin' : role === 'creator' ? 'Creator' : 'Client',
+          status,
+          joined: row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Unknown',
+          reports: reportCounts.get(uid) || reportCounts.get(String(row.id)) || 0,
+          avatarColor: role === 'creator' ? '#a78bfa' : role === 'admin' ? '#f43f5e' : '#3b82f6',
+        };
+      }));
+    } catch (err) {
+      console.error('Failed to load users:', err);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     Animated.loop(
@@ -36,9 +72,7 @@ export default function AdminUsersScreen() {
       ])
     ).start();
 
-    // Simulate network latency
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    loadUsers();
   }, [pulseAnim]);
 
   const getStatusColor = (status: string) => {
@@ -59,7 +93,7 @@ export default function AdminUsersScreen() {
   };
 
   // Filter users based on search and active filter
-  const filteredUsers = MOCK_USERS.filter(user => {
+  const filteredUsers = users.filter(user => {
     const matchesSearch = search === '' || user.name.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = activeFilter === 'All'
       || (activeFilter === 'Creators' && user.role === 'Creator')
@@ -277,7 +311,15 @@ export default function AdminUsersScreen() {
                 {selectedUser.status !== 'Suspended' ? (
                   <Pressable
                     style={({ pressed }) => [styles.actionButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#ef4444' }, pressed && { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}
-                    onPress={() => alert(`Suspended ${selectedUser.name}!`)}
+                    onPress={async () => {
+                      try {
+                        await suspendUser(selectedUser.id);
+                        setSelectedUser(null);
+                        await loadUsers();
+                      } catch (err: any) {
+                        alert(err?.message || 'Failed to suspend account');
+                      }
+                    }}
                   >
                     <Ionicons name="ban" size={20} color="#ef4444" />
                     <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Suspend Account</Text>
@@ -285,7 +327,15 @@ export default function AdminUsersScreen() {
                 ) : (
                   <Pressable
                     style={({ pressed }) => [styles.actionButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#10b981' }, pressed && { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}
-                    onPress={() => alert(`Reactivated ${selectedUser.name}!`)}
+                    onPress={async () => {
+                      try {
+                        await activateUser(selectedUser.id);
+                        setSelectedUser(null);
+                        await loadUsers();
+                      } catch (err: any) {
+                        alert(err?.message || 'Failed to reactivate account');
+                      }
+                    }}
                   >
                     <Ionicons name="refresh" size={20} color="#10b981" />
                     <Text style={[styles.actionButtonText, { color: '#10b981' }]}>Reactivate Account</Text>

@@ -4,59 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Shadows } from '../../constants/theme';
-
-const MOCK_PROJECTS = [
-  {
-    id: '1',
-    title: '3D Video Animation',
-    status: 'PENDING',
-    client: 'AniHub',
-    creator: 'Unknown',
-    budget: 800,
-    deadline: '2026-03-20',
-    description: 'Product showcase animation',
-  },
-  {
-    id: '2',
-    title: 'Audio Edits',
-    status: 'IN PROGRESS',
-    client: 'Shiko',
-    creator: 'Unknown',
-    budget: 900,
-    deadline: '2026-03-10',
-    description: 'Podcast post-production editing',
-  },
-  {
-    id: '3',
-    title: 'Banner Ad Set',
-    status: 'COMPLETED',
-    client: 'AdClick',
-    creator: 'Unknown',
-    budget: 500,
-    deadline: '2026-02-10',
-    description: 'Digital ad banners',
-  },
-  {
-    id: '4',
-    title: 'Brand Identity Package',
-    status: 'COMPLETED',
-    client: 'GreenCo',
-    creator: 'Unknown',
-    budget: 1200,
-    deadline: '2026-01-15',
-    description: 'Complete brand identity',
-  },
-  {
-    id: '5',
-    title: 'Business Card Design',
-    status: 'COMPLETED',
-    client: 'PrintHub',
-    creator: 'Unknown',
-    budget: 300,
-    deadline: '2026-02-05',
-    description: 'Professional business cards',
-  }
-];
+import { deleteOrder, fetchOrders, updateOrderStatus } from '@/frontend/api';
 
 const FILTERS = ['All', 'Active', 'Pending', 'Done', 'Suspended'];
 
@@ -68,8 +16,33 @@ export default function AdminProjectsScreen() {
 
   // Interactivity States
   const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  const loadProjects = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchOrders();
+      const rows = data?.results || data || [];
+      setProjects(rows.map((order: any) => ({
+        raw: order,
+        id: order.id,
+        title: order.service_title || `Order #${order.id}`,
+        status: String(order.status || 'pending').toUpperCase().replace(/_/g, ' '),
+        client: order.client_name || `Client #${order.client_id}`,
+        creator: order.creator_name || `Creator #${order.creator_id}`,
+        budget: Number(order.price || order.escrow_amount || 0),
+        deadline: order.due_date ? new Date(order.due_date).toLocaleDateString() : 'No deadline',
+        description: order.description || order.service_title || 'No description provided',
+      })));
+    } catch (err) {
+      console.error('Failed to load projects:', err);
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     Animated.loop(
@@ -79,18 +52,16 @@ export default function AdminProjectsScreen() {
       ])
     ).start();
 
-    // Simulate network latency
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    loadProjects();
   }, [pulseAnim]);
 
   // Filter projects
-  const filteredProjects = MOCK_PROJECTS.filter(proj => {
+  const filteredProjects = projects.filter(proj => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'Active' && proj.status === 'IN PROGRESS') return true;
     if (activeFilter === 'Pending' && proj.status === 'PENDING') return true;
     if (activeFilter === 'Done' && proj.status === 'COMPLETED') return true;
-    if (activeFilter === 'Suspended' && proj.status === 'SUSPENDED') return true;
+    if (activeFilter === 'Suspended' && ['CANCELLED', 'REJECTED', 'REFUNDED', 'DISPUTED'].includes(proj.status)) return true;
     return false;
   });
 
@@ -211,7 +182,17 @@ export default function AdminProjectsScreen() {
                     </View>
                   </View>
 
-                  <Pressable hitSlop={10} onPress={() => alert(`Remove Project ${proj.id}?`)}>
+                  <Pressable
+                    hitSlop={10}
+                    onPress={async () => {
+                      try {
+                        await deleteOrder(proj.id);
+                        await loadProjects();
+                      } catch (err: any) {
+                        alert(err?.message || `Failed to remove project ${proj.id}`);
+                      }
+                    }}
+                  >
                     <Ionicons name="trash-outline" size={20} color={theme.textSecondary} />
                   </Pressable>
                 </View>
@@ -250,7 +231,14 @@ export default function AdminProjectsScreen() {
                   </Pressable>
 
                   <Pressable
-                    onPress={() => alert('Suspend Project and freeze funds?')}
+                    onPress={async () => {
+                      try {
+                        await updateOrderStatus(proj.id, 'cancelled');
+                        await loadProjects();
+                      } catch (err: any) {
+                        alert(err?.message || 'Failed to suspend project');
+                      }
+                    }}
                     style={[styles.suspendBtn, { backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.3)' }]}
                   >
                     <Ionicons name="ban-outline" size={16} color="#ef4444" style={{ marginRight: 6 }} />
@@ -338,7 +326,15 @@ export default function AdminProjectsScreen() {
 
                 <Pressable
                   style={({ pressed }) => [styles.actionButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#ef4444' }, pressed && { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}
-                  onPress={() => alert(`Forced cancellation. Funds refunded to ${selectedProject.client}.`)}
+                  onPress={async () => {
+                    try {
+                      await updateOrderStatus(selectedProject.id, 'cancelled');
+                      setSelectedProject(null);
+                      await loadProjects();
+                    } catch (err: any) {
+                      alert(err?.message || 'Failed to terminate project');
+                    }
+                  }}
                 >
                   <Ionicons name="flame-outline" size={20} color="#ef4444" />
                   <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Terminate & Refund</Text>

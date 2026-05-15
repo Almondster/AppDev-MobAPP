@@ -4,6 +4,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useUnread } from '@/context/UnreadContext';
 import { auth } from '@/frontend/session';
 import { supabase } from '@/frontend/store';
+import { clearAllNotifications, fetchOrderNotifications, markNotificationRead } from '@/frontend/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -81,12 +82,19 @@ export default function NotificationScreen() {
   const [activeFilter, setActiveFilter] = useState<'All' | 'Messages' | 'Orders'>('All');
   const [showClearModal, setShowClearModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [backendNotifications, setBackendNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchRole = async () => {
       if (user) {
         const { data } = await supabase.from('users').select('role').eq('firebase_uid', user.uid).single();
         if (data) setRole(data.role);
+        try {
+          const notifications = await fetchOrderNotifications({ user_id: user.uid, is_read: false });
+          setBackendNotifications(notifications?.results || notifications || []);
+        } catch (err) {
+          console.warn('Order notification feed unavailable:', err);
+        }
       }
       setLoading(false);
     };
@@ -96,6 +104,19 @@ export default function NotificationScreen() {
   // --- COMBINE & SORT DATA ---
   const getNotifications = () => {
     const list: NotificationItem[] = [];
+
+    backendNotifications.forEach((notification) => {
+      list.push({
+        type: 'order',
+        id: String(notification.id),
+        itemId: notification.order_id,
+        title: notification.title || 'Order Update',
+        desc: notification.message || notification.notification_type || 'Order notification',
+        time: notification.created_at,
+        icon: 'notifications',
+        color: notification.is_read ? '#6b7280' : '#3b82f6',
+      });
+    });
 
     // 1. Orders - Detailed descriptions based on status and role
     unseenOrders.forEach(o => {
@@ -331,14 +352,29 @@ export default function NotificationScreen() {
 
   // --- HANDLERS ---
   const handleClearAll = async () => {
+    try {
+      await clearAllNotifications();
+      setBackendNotifications([]);
+    } catch (err) {
+      console.warn('Failed to clear backend notifications:', err);
+    }
     await markOrdersAsSeen();
     await markAllAsRead();
     setShowClearModal(false);
     router.back();
   };
 
-  const handlePress = (item: NotificationItem) => {
+  const handlePress = async (item: NotificationItem) => {
     if (item.type === 'order') {
+      const notification = backendNotifications.find((entry) => String(entry.id) === item.id);
+      if (notification) {
+        try {
+          await markNotificationRead(notification.id);
+          setBackendNotifications((current) => current.filter((entry) => entry.id !== notification.id));
+        } catch (err) {
+          console.warn('Failed to mark notification read:', err);
+        }
+      }
       router.push(`/(tabs)/order?orderId=${item.itemId}`);
     } else {
       router.push(`/chat/${item.id}`);

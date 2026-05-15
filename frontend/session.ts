@@ -1,5 +1,5 @@
-import { clone, createLocalUserRecord, ensureUserRecord, findUserByEmail } from '@/frontend/seed';
 import {
+  forgotPasswordAPI,
   loginAPI,
   registerAPI,
   clearToken,
@@ -37,6 +37,18 @@ const listeners = new Set<(user: User | null) => void>();
 const ENABLE_LOCAL_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_LOCAL_FALLBACK === 'true';
 let authReady = false;
 let restorePromise: Promise<void> | null = null;
+
+const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+
+const loadSeed = async () => {
+  if (!ENABLE_LOCAL_FALLBACK) return null;
+  return import('@/frontend/seed');
+};
+
+const ensureLocalUserRecord = async (record: Record<string, any>) => {
+  const seed = await loadSeed();
+  seed?.ensureUserRecord(record);
+};
 
 const buildUser = (record: Record<string, any>, providerId = 'password'): User => ({
   uid: String(record.firebase_uid || record.id),
@@ -87,7 +99,6 @@ const restoreStoredSession = async () => {
       try {
         const freshUser = normalizeBackendUser(await fetchMe());
         await apiSetStoredUser(freshUser);
-        ensureUserRecord(freshUser);
         auth.currentUser = buildUser(freshUser);
       } catch {
         await clearToken();
@@ -100,8 +111,8 @@ const restoreStoredSession = async () => {
   await restorePromise;
 };
 
-const syncRecordFromUser = (user: User) => {
-  ensureUserRecord({
+const syncRecordFromUser = async (user: User) => {
+  await ensureLocalUserRecord({
     firebase_uid: user.uid,
     full_name: user.displayName || user.email?.split('@')[0] || 'User',
     first_name: user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'User',
@@ -136,8 +147,6 @@ export const signInWithEmailAndPassword = async (_authState: AuthState, email: s
       role: data.role,
       first_name: data.full_name?.split(' ')[0] || data.email.split('@')[0],
     };
-    // Ensure local seed has this user for other components
-    ensureUserRecord(record);
     setCurrentUserFromRecord(record, 'password');
     return { user: auth.currentUser as User };
   } catch (err: any) {
@@ -146,9 +155,10 @@ export const signInWithEmailAndPassword = async (_authState: AuthState, email: s
     }
     // Fallback to local mock if backend unreachable
     console.warn('Backend login failed, falling back to local:', err.message);
-    let record = findUserByEmail(email.trim());
+    const seed = await loadSeed();
+    let record = seed?.findUserByEmail(email.trim());
     if (!record) {
-      record = createLocalUserRecord({ email: email.trim(), full_name: email.split('@')[0] });
+      record = seed?.createLocalUserRecord({ email: email.trim(), full_name: email.split('@')[0] });
     }
     setCurrentUserFromRecord(record, 'password');
     return { user: auth.currentUser as User };
@@ -159,15 +169,21 @@ export const signInWithEmailAndPassword = async (_authState: AuthState, email: s
  * Register via the Django backend API.
  * Falls back to local mock if the backend is unreachable.
  */
-export const createUserWithEmailAndPassword = async (_authState: AuthState, email: string, password: string) => {
+export const createUserWithEmailAndPassword = async (
+  _authState: AuthState,
+  email: string,
+  password: string,
+  profile: { first_name?: string; last_name?: string; phone?: string; role?: string } = {}
+) => {
   try {
     const data = await registerAPI({
       email: email.trim(),
       password,
       confirm_password: password,
-      first_name: email.split('@')[0],
-      last_name: '',
-      role: 'client',
+      first_name: profile.first_name || email.split('@')[0],
+      last_name: profile.last_name || '',
+      phone: profile.phone,
+      role: profile.role || 'client',
     });
     const record = {
       firebase_uid: data.firebase_uid,
@@ -176,7 +192,6 @@ export const createUserWithEmailAndPassword = async (_authState: AuthState, emai
       role: data.role,
       first_name: data.full_name?.split(' ')[0] || data.email.split('@')[0],
     };
-    ensureUserRecord(record);
     setCurrentUserFromRecord(record, 'password');
     return { user: auth.currentUser as User };
   } catch (err: any) {
@@ -184,8 +199,9 @@ export const createUserWithEmailAndPassword = async (_authState: AuthState, emai
       throw err;
     }
     console.warn('Backend register failed, falling back to local:', err.message);
-    const existing = findUserByEmail(email.trim());
-    const record = existing || createLocalUserRecord({ email: email.trim(), full_name: email.split('@')[0] });
+    const seed = await loadSeed();
+    const existing = seed?.findUserByEmail(email.trim());
+    const record = existing || seed?.createLocalUserRecord({ email: email.trim(), full_name: email.split('@')[0] });
     setCurrentUserFromRecord(record, 'password');
     return { user: auth.currentUser as User };
   }
@@ -202,7 +218,6 @@ export const signInWithCredential = async (_authState: AuthState, credential: Cr
       full_name: data.full_name,
       role: data.role,
     };
-    ensureUserRecord(record);
     setCurrentUserFromRecord(record, credential.providerId);
     return { user: auth.currentUser as User };
   } catch {
@@ -210,16 +225,18 @@ export const signInWithCredential = async (_authState: AuthState, credential: Cr
       throw new Error('Social login is not configured for this backend yet. Use email and password.');
     }
     // Fallback to local
-    const existing = findUserByEmail(email);
+    const seed = await loadSeed();
+    const existing = seed?.findUserByEmail(email);
     const providerLabel = credential.providerId.includes('github') ? 'GitHub User' : 'Google User';
-    const record = existing || createLocalUserRecord({ email, full_name: providerLabel });
+    const record = existing || seed?.createLocalUserRecord({ email, full_name: providerLabel });
     setCurrentUserFromRecord(record, credential.providerId);
     return { user: auth.currentUser as User };
   }
 };
 
-export const sendPasswordResetEmail = async (_authState: AuthState, _email: string) => {};
-export const sendEmailVerification = async (_user: User) => {};
+export const sendPasswordResetEmail = async (_authState: AuthState, email: string) => {
+  return forgotPasswordAPI(email);
+};
 export const reauthenticateWithCredential = async (_user: User, _credential: Credential) => ({ user: _user });
 export const updatePassword = async (_user: User, _newPassword: string) => {};
 
@@ -236,7 +253,7 @@ export const updateProfile = async (user: User, updates: { displayName?: string 
   if (typeof updates.photoURL !== 'undefined') {
     user.photoURL = updates.photoURL;
   }
-  syncRecordFromUser(user);
+  await syncRecordFromUser(user);
   try {
     const updated = await updateUser(user.uid, {
       username: user.displayName,
@@ -254,7 +271,7 @@ export const updateProfile = async (user: User, updates: { displayName?: string 
 
 export const updateEmail = async (user: User, newEmail: string) => {
   user.email = newEmail;
-  syncRecordFromUser(user);
+  await syncRecordFromUser(user);
   if (auth.currentUser?.uid === user.uid) {
     auth.currentUser = clone(user);
     notify();

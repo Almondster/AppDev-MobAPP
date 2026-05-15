@@ -1,16 +1,12 @@
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { LanguageProvider } from '@/context/LanguageContext';
-import { OrderProvider } from '@/context/OrderContext';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { UnreadProvider } from '@/context/UnreadContext';
-import { useUserSync } from '@/hooks/useUserSync';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { auth, onAuthStateChanged, User } from '@/frontend/session';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export default function RootLayout() {
-  useUserSync();
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
@@ -53,37 +49,33 @@ export default function RootLayout() {
     <ErrorBoundary>
       <ThemeProvider>
         <LanguageProvider>
-          <OrderProvider>
-            <UnreadProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="login" />
-                <Stack.Screen name="register" />
-                <Stack.Screen name="(tabs)" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="(tabs)" />
 
-                {/* Search - No Animation */}
-                <Stack.Screen
-                  name="search"
-                  options={{
-                    animation: 'none',
-                    headerShown: false
-                  }}
-                />
-                <Stack.Screen
-                  name="smart-match"
-                  options={{
-                    animation: 'none',
-                    headerShown: false
-                  }}
-                />
-                <Stack.Screen
-                  name="chat/[id]"
-                  options={{
-                    animation: 'none'
-                  }}
-                />
-              </Stack>
-            </UnreadProvider>
-          </OrderProvider>
+            {/* Search - No Animation */}
+            <Stack.Screen
+              name="search"
+              options={{
+                animation: 'none',
+                headerShown: false
+              }}
+            />
+            <Stack.Screen
+              name="smart-match"
+              options={{
+                animation: 'none',
+                headerShown: false
+              }}
+            />
+            <Stack.Screen
+              name="chat/[id]"
+              options={{
+                animation: 'none'
+              }}
+            />
+          </Stack>
         </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>
